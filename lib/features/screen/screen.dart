@@ -4,15 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/tiles.dart';
+import 'package:sergey_sobyanin/features/screen/history_module.dart';
+import 'package:sergey_sobyanin/features/screen/json_module.dart';
+import 'package:sergey_sobyanin/features/screen/main_module.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class Screen extends StatefulWidget {
+  const Screen({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<Screen> createState() => _ScreenState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ScreenState extends State<Screen> {
+  int chosen_module = 0;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -22,7 +27,7 @@ class _HomePageState extends State<HomePage> {
           body: Center(child: LayoutBuilder(
             builder: (context, constraints) {
               const double maxEdge = 100;
-              const double h = 900;
+              const double h = 800;
 
               const double leftW = 400;
               const double centerW = 800;
@@ -94,12 +99,14 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
-                              log("Мы тут");
+                              setState(() {
+                                chosen_module = 0;
+                              });
                             },
                             borderRadius: BorderRadius.circular(15),
                             child: Ink(
                               decoration: BoxDecoration(
-                                color: Color(CustomColors.accent),
+                                color: chosen_module == 0 ? Color(CustomColors.accent) : Color(CustomColors.main),
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Container(
@@ -123,7 +130,12 @@ class _HomePageState extends State<HomePage> {
                                     SizedBox(width: 20),
                                     Text(
                                       'Главная',
-                                      style: TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
+                                      style: TextStyle(
+                                          fontSize: 25,
+                                          color: chosen_module == 0
+                                              ? Color(CustomColors.main)
+                                              : Color(CustomColors.darkAccent),
+                                          fontWeight: FontWeight.w600),
                                     )
                                   ],
                                 ),
@@ -138,12 +150,14 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
-                              log("В историю");
+                              setState(() {
+                                chosen_module = 1;
+                              });
                             },
                             borderRadius: BorderRadius.circular(15),
                             child: Ink(
                               decoration: BoxDecoration(
-                                color: Color(CustomColors.main),
+                                color: chosen_module == 1 ? Color(CustomColors.accent) : Color(CustomColors.main),
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Container(
@@ -169,7 +183,9 @@ class _HomePageState extends State<HomePage> {
                                       'История',
                                       style: TextStyle(
                                           fontSize: 25,
-                                          color: Color(CustomColors.darkAccent),
+                                          color: chosen_module == 1
+                                              ? Color(CustomColors.main)
+                                              : Color(CustomColors.darkAccent),
                                           fontWeight: FontWeight.w600),
                                     )
                                   ],
@@ -186,12 +202,14 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.transparent, // нужен Material-предок для волны
                           child: InkWell(
                             onTap: () {
-                              log("JSON");
+                              setState(() {
+                                chosen_module = 2;
+                              });
                             },
                             borderRadius: BorderRadius.circular(15),
                             child: Ink(
                               decoration: BoxDecoration(
-                                color: Color(CustomColors.main),
+                                color: chosen_module == 2 ? Color(CustomColors.accent) : Color(CustomColors.main),
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Container(
@@ -217,7 +235,9 @@ class _HomePageState extends State<HomePage> {
                                       'Экспорт в json',
                                       style: TextStyle(
                                           fontSize: 25,
-                                          color: Color(CustomColors.darkAccent),
+                                          color: chosen_module == 2
+                                              ? Color(CustomColors.main)
+                                              : Color(CustomColors.darkAccent),
                                           fontWeight: FontWeight.w600),
                                     )
                                   ],
@@ -231,61 +251,12 @@ class _HomePageState extends State<HomePage> {
                   ),
                   SizedBox(width: gap),
 
-                  Container(
-                    width: centerW,
-                    height: h,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 10,
-                      children: [
-                        Text(
-                          "Введите id",
-                          style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w500),
-                        ),
-                        Container(
-                          width: 700,
-                          height: 70,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(offset: Offset(0, 4), blurRadius: 4, spreadRadius: 0, color: Colors.black26)
-                              ]),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 500, top: 5),
-                          child: Material(
-                            elevation: 5,
-                            borderRadius: BorderRadius.circular(10),
+                  switch (chosen_module) {
+                    1 => HistoryModule(centerW: centerW, h: h),
+                    2 => JsonModule(centerW: centerW, h: h),
+                    _ => MainModule(centerW: centerW, h: h)
+                  },
 
-                            color: Colors.transparent, // нужен Material-предок для волны
-                            child: InkWell(
-                              onTap: () {
-                                log("введен id");
-                              },
-                              borderRadius: BorderRadius.circular(10),
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                  color: Color(CustomColors.accent),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Container(
-                                    width: 200,
-                                    height: 60,
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      'Готово',
-                                      style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w500),
-                                    )),
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
                   SizedBox(width: gap),
 
                   Container(
