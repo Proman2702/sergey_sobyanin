@@ -1,10 +1,12 @@
 import 'dart:developer';
 import 'dart:math' as math;
+
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
+import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
 
 class GetInstrumentsDialog extends StatefulWidget {
   const GetInstrumentsDialog({super.key, required this.id});
@@ -20,8 +22,9 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   double inset = 24;
 
   PlatformFile? imageFile;
-
   Uint8List? bytes;
+  bool sendingToServer = false;
+  Map<String, dynamic>? result;
 
   Future<void> pickOneImage() async {
     final result = await FilePicker.platform.pickFiles(
@@ -39,6 +42,18 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     if (imageFile != null) {
       log(imageFile!.name);
       bytes = imageFile?.bytes;
+      setState(() {});
+    }
+  }
+
+  void setImageWithSendingToServer() async {
+    await pickOneImage();
+    if (imageFile != null) {
+      log(imageFile!.name);
+      bytes = imageFile?.bytes;
+      result = await UploadAudio().uploadAudio(bytes!, imageFile!.name, 'http://127.0.0.1:5000/upload')
+          as Map<String, dynamic>;
+      log(result.toString());
       setState(() {});
     }
   }
@@ -84,7 +99,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                               BoxDecoration(borderRadius: BorderRadius.circular(16), color: Color(CustomColors.shadow)),
                           child: bytes == null
                               ? GestureDetector(
-                                  onTap: setImage,
+                                  onTap: setImageWithSendingToServer,
                                   child: Container(
                                       width: 300,
                                       height: 300,
@@ -97,16 +112,9 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             spacing: 10,
                                             children: [
-                                              Icon(
-                                                Icons.photo_size_select_actual_outlined,
-                                                color: Colors.black54,
-                                                size: 60,
-                                              ),
-                                              Icon(
-                                                Icons.add,
-                                                color: Colors.black54,
-                                                size: 60,
-                                              ),
+                                              Icon(Icons.photo_size_select_actual_outlined,
+                                                  color: Colors.black54, size: 60),
+                                              Icon(Icons.add, color: Colors.black54, size: 60),
                                             ],
                                           ),
                                           Text(
@@ -126,18 +134,15 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                       child: Container(
                                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
                                         child: InteractiveViewer(
-                                          // можно масштабировать колесиком/пальцами
-                                          child: Image.memory(
-                                            Uint8List.fromList(bytes as List<int>),
-                                            fit: BoxFit.contain, // вписываем в экран
-                                          ),
+                                          child:
+                                              Image.memory(Uint8List.fromList(bytes as List<int>), fit: BoxFit.contain),
                                         ),
                                       ),
                                     ),
                                     SizedBox(height: 15),
                                     FloatingActionButton(
                                       backgroundColor: Color(CustomColors.accent),
-                                      onPressed: setImage,
+                                      onPressed: setImageWithSendingToServer,
                                       child: Icon(
                                         Icons.refresh,
                                         color: Color(CustomColors.main),
@@ -165,11 +170,14 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                               ),
                               SizedBox(height: 30),
                               Container(
-                                width: 600,
-                                height: 450,
-                                color: Colors.black12,
-                                child: Text('нейронка'),
-                              ),
+                                  width: 600,
+                                  height: 450,
+                                  alignment: Alignment.center,
+                                  child: result == null
+                                      ? ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
+                                          child: CircularProgressIndicator())
+                                      : Text(result.toString())),
                               SizedBox(height: 60),
                               SizedBox(
                                 width: 500,
