@@ -1,4 +1,4 @@
-import 'package:sergey_sobyanin/etc/models/user.dart';
+import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 const String databasePath = 'users';
@@ -24,19 +24,19 @@ class DatabaseService {
   // Добавить в базу данных пользователя
   // Входные данные: используется инстанс класса CustomUser с заполненными данными
   Future<void> addUser(CustomUser user) async {
-    await _usersRef.doc(user.email).set(user);
+    await _usersRef.doc(user.id).set(user);
   }
 
   // Обновление данных (используются все параметры пользователя)
   // Входные данные: используется инстанс класса CustomUser c теми
   // заполненными данными, которые вы хотите изменить
   Future<void> updateUser(CustomUser user) async {
-    await _usersRef.doc(user.email).update(user.toJson());
+    await _usersRef.doc(user.id).update(user.toJson());
   }
 
   // Удаление пользователя из базы данных
   // Входные данные: почта аккаунта
-  Future<void> deleteUser(String email) async {
-    await _usersRef.doc(email).delete();
+  Future<void> deleteUser(String id) async {
+    await _usersRef.doc(id).delete();
   }
 }

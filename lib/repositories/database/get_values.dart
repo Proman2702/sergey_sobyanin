@@ -1,18 +1,17 @@
-import 'package:sergey_sobyanin/etc/models/user.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 
 // Класс для обработки сырых данных потока и вывода информации для конкретного пользователя (user)
 class GetValues {
   final List _users;
-  final User _user;
+  final String _id;
 
-  GetValues({required List<dynamic> users, required User user})
-      : _user = user,
+  GetValues({required List<dynamic> users, required String id})
+      : _id = id,
         _users = users;
 
   CustomUser? getUser() {
     for (var i in _users) {
-      if (i.id == _user.email) {
+      if (i.id == _id) {
         return i.data();
       }
     }
