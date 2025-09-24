@@ -33,6 +33,16 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     setState(() => imageFile = result.files.single);
   }
 
+  void setImage() async {
+    log('тык');
+    await pickOneImage();
+    if (imageFile != null) {
+      log(imageFile!.name);
+      bytes = imageFile?.bytes;
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -72,36 +82,164 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                           alignment: Alignment.center,
                           decoration:
                               BoxDecoration(borderRadius: BorderRadius.circular(16), color: Color(CustomColors.shadow)),
-                          child: GestureDetector(
-                            onTap: () async {
-                              log('тык');
-                              await pickOneImage();
-                              if (imageFile != null) {
-                                log(imageFile!.name);
-                                bytes = imageFile?.bytes;
-                                setState(() {});
-                              }
-                            },
-                            child: Container(
-                                width: 200,
-                                height: 200,
-                                color: Colors.black12,
-                                alignment: Alignment.center,
-                                child: Text('тык')),
-                          ),
+                          child: bytes == null
+                              ? GestureDetector(
+                                  onTap: setImage,
+                                  child: Container(
+                                      width: 300,
+                                      height: 300,
+                                      alignment: Alignment.center,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        spacing: 10,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            spacing: 10,
+                                            children: [
+                                              Icon(
+                                                Icons.photo_size_select_actual_outlined,
+                                                color: Colors.black54,
+                                                size: 60,
+                                              ),
+                                              Icon(
+                                                Icons.add,
+                                                color: Colors.black54,
+                                                size: 60,
+                                              ),
+                                            ],
+                                          ),
+                                          Text(
+                                            'Нажмите, чтобы добавить фото',
+                                            style: TextStyle(
+                                                color: Colors.black54, fontWeight: FontWeight.w500, fontSize: 22),
+                                            textAlign: TextAlign.center,
+                                          )
+                                        ],
+                                      )),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: 700, maxHeight: 700),
+                                      child: Container(
+                                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+                                        child: InteractiveViewer(
+                                          // можно масштабировать колесиком/пальцами
+                                          child: Image.memory(
+                                            Uint8List.fromList(bytes as List<int>),
+                                            fit: BoxFit.contain, // вписываем в экран
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 15),
+                                    FloatingActionButton(
+                                      backgroundColor: Color(CustomColors.accent),
+                                      onPressed: setImage,
+                                      child: Icon(
+                                        Icons.refresh,
+                                        color: Color(CustomColors.main),
+                                        size: 40,
+                                      ),
+                                    )
+                                  ],
+                                ),
                         ),
-                        bytes == null
-                            ? const Text('Картинка не выбрана')
-                            : ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: 700, maxHeight: 700),
-                                child: InteractiveViewer(
-                                  // можно масштабировать колесиком/пальцами
-                                  child: Image.memory(
-                                    Uint8List.fromList(bytes as List<int>),
-                                    fit: BoxFit.contain, // вписываем в экран
-                                  ),
+                        Container(
+                          width: 700,
+                          height: 800,
+                          alignment: Alignment.center,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(height: 20),
+                              SizedBox(
+                                height: 160,
+                                width: 600,
+                                child: Text(
+                                  'Список полученных инструментов',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 50),
                                 ),
                               ),
+                              SizedBox(height: 30),
+                              Container(
+                                width: 600,
+                                height: 450,
+                                color: Colors.black12,
+                                child: Text('нейронка'),
+                              ),
+                              SizedBox(height: 60),
+                              SizedBox(
+                                width: 500,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Material(
+                                      elevation: 5,
+                                      borderRadius: BorderRadius.circular(15),
+                                      color: Colors.transparent,
+                                      child: //InkWell(
+                                          GestureDetector(
+                                        onTap: () {
+                                          setState(() {});
+                                        },
+                                        //borderRadius: BorderRadius.circular(15),
+                                        child: Ink(
+                                          decoration: BoxDecoration(
+                                            color: Color(CustomColors.shadow),
+                                            borderRadius: BorderRadius.circular(15),
+                                          ),
+                                          child: Container(
+                                              width: 220,
+                                              height: 50,
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                'Редактировать',
+                                                style: TextStyle(
+                                                    fontSize: 25,
+                                                    color: Color(CustomColors.main),
+                                                    fontWeight: FontWeight.w600),
+                                              )),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 50),
+                                    Material(
+                                      elevation: 5,
+                                      borderRadius: BorderRadius.circular(15),
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {});
+                                        },
+                                        borderRadius: BorderRadius.circular(15),
+                                        child: Ink(
+                                          decoration: BoxDecoration(
+                                            color: Color(CustomColors.accent),
+                                            borderRadius: BorderRadius.circular(15),
+                                          ),
+                                          child: Container(
+                                              width: 220,
+                                              height: 50,
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                'Сохранить',
+                                                style: TextStyle(
+                                                    fontSize: 25,
+                                                    color: Color(CustomColors.main),
+                                                    fontWeight: FontWeight.w600),
+                                              )),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        )
                       ],
                     ),
                   ),
