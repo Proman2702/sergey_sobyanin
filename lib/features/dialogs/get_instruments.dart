@@ -8,6 +8,20 @@ import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
 import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
 
+const Map<String, String> INSTRUMENTS = {
+  'screwdriver -': 'Отвертка "-"',
+  'screwdriver +': 'Отвертка "+"',
+  'screwdriver x': 'Отвертка на смещенный крест',
+  'kolovorot': 'Коловорот',
+  'passatizi kontro': 'Пассатижи контровочные',
+  'passatizi': 'Пассатижи',
+  'shernitsa': 'Шэрница',
+  'razvodnoy kluch': 'Разводной ключ',
+  'otkruvashka': 'Открывашка для банок с маслом',
+  'kluch rozkov': 'Ключ рожковый/накидной ¾',
+  'bokorezu': 'Бокорезы',
+};
+
 class GetInstrumentsDialog extends StatefulWidget {
   const GetInstrumentsDialog({super.key, required this.id});
 
@@ -24,7 +38,8 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   PlatformFile? imageFile;
   Uint8List? bytes;
   bool sendingToServer = false;
-  Map<String, dynamic>? result;
+  Map<String, dynamic>? data;
+  final Map<String, List<double>> result = {};
 
   Future<void> pickOneImage() async {
     final result = await FilePicker.platform.pickFiles(
@@ -46,14 +61,41 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     }
   }
 
+  List parseToDisplay(Map<String, List<double>> result) {
+    List items = result.entries.toList();
+    return items;
+    // items.sort(
+    //   (a, b) => a.length.compareTo(b.length),
+    // );
+
+    // items = items.reversed.toList();
+
+    // final (List<String>, List<String>) displayText =
+    //     ([for (var i = 0; i < items.length; i += 2) items[i]], [for (var i = 1; i < items.length; i += 2) items[i]]);
+
+    // return displayText;
+  }
+
   void setImageWithSendingToServer() async {
     await pickOneImage();
     if (imageFile != null) {
       log(imageFile!.name);
       bytes = imageFile?.bytes;
-      result = await UploadAudio().uploadAudio(bytes!, imageFile!.name, 'http://127.0.0.1:5000/upload')
+      data = await UploadAudio().uploadAudio(bytes!, imageFile!.name, 'http://127.0.0.1:5000/upload')
           as Map<String, dynamic>;
-      log(result.toString());
+
+      for (final item in data!["predictions"]) {
+        final name = item["class_name"] as String;
+        final conf = (item["confidence"] as num).toDouble();
+        final rounded = double.parse(conf.toStringAsFixed(2));
+
+        // если ключа ещё нет → создаём список
+        result.putIfAbsent(name, () => []);
+        // добавляем в список
+        result[name]!.add(rounded);
+      }
+
+      log(parseToDisplay(result).toString());
       setState(() {});
     }
   }
@@ -172,12 +214,60 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                               Container(
                                   width: 600,
                                   height: 450,
-                                  alignment: Alignment.center,
-                                  child: result == null
+                                  alignment: Alignment.topCenter,
+                                  child: result.isEmpty
                                       ? ConstrainedBox(
                                           constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
                                           child: CircularProgressIndicator())
-                                      : Text(result.toString())),
+                                      : GridView.count(
+                                          crossAxisCount: 2, // две колонки
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 12,
+                                          childAspectRatio: 3.5,
+
+                                          shrinkWrap: true,
+                                          children: parseToDisplay(result).map((entry) {
+                                            final name = INSTRUMENTS[entry.key];
+                                            final count = entry.value.length;
+
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(15),
+                                                color: Colors.white,
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      name!,
+                                                      style: const TextStyle(
+                                                          fontSize: 22, fontWeight: FontWeight.w500, height: 1.2),
+                                                      softWrap: true,
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: Color(CustomColors.darkAccent),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Text(
+                                                      "$count",
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.w800,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
+                                        )),
                               SizedBox(height: 60),
                               SizedBox(
                                 width: 500,
