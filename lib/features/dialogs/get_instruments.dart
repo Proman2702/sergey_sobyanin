@@ -64,16 +64,6 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   List parseToDisplay(Map<String, List<double>> result) {
     List items = result.entries.toList();
     return items;
-    // items.sort(
-    //   (a, b) => a.length.compareTo(b.length),
-    // );
-
-    // items = items.reversed.toList();
-
-    // final (List<String>, List<String>) displayText =
-    //     ([for (var i = 0; i < items.length; i += 2) items[i]], [for (var i = 1; i < items.length; i += 2) items[i]]);
-
-    // return displayText;
   }
 
   void setImageWithSendingToServer() async {

@@ -1,42 +1,40 @@
-import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 
-const String databasePath = 'users';
+const String collectionPath = 'sessions';
 
 class DatabaseService {
-  final _firestore = FirebaseFirestore.instance;
-  late final CollectionReference _usersRef;
+  final FirebaseFirestore _firestore;
+  late final CollectionReference<CustomUser> _sessionsRef;
 
-  // В конструкоре класса создается референс к базе данных
-  // Который автоматически обрабатывает входные и выходные данные
-  DatabaseService() {
-    _usersRef = _firestore.collection(databasePath).withConverter<CustomUser>(
-        fromFirestore: (snapshots, _) => CustomUser.fromJson(snapshots.data()!),
-        toFirestore: (user, _) => user.toJson());
+  DatabaseService({FirebaseFirestore? firestore}) : _firestore = firestore ?? FirebaseFirestore.instance {
+    _sessionsRef = _firestore.collection(collectionPath).withConverter<CustomUser>(
+          fromFirestore: (snap, _) {
+            final data = snap.data() ?? <String, dynamic>{};
+            // если твой CustomUser.fromJson сам умеет работать с отсутствующими полями — ок
+            // подстрахуемся, что id всегда попадёт в модель
+            return CustomUser.fromJson({
+              ...data,
+              'id': snap.id,
+            });
+          },
+          toFirestore: (user, _) => user.toJson(),
+        );
   }
 
-  // Получить данные (Stream)
-  // Нужен только для init state (ради оптимизации)
-  Stream<QuerySnapshot> getUsers() {
-    return _usersRef.snapshots();
+  /// Получить список всех пользователей (разово).
+  Future<List<CustomUser>> getUsers() async {
+    final qs = await _sessionsRef.get();
+    return qs.docs.map((d) => d.data()).toList();
   }
 
-  // Добавить в базу данных пользователя
-  // Входные данные: используется инстанс класса CustomUser с заполненными данными
-  Future<void> addUser(CustomUser user) async {
-    await _usersRef.doc(user.id).set(user);
+  /// Создать или обновить пользователя (upsert).
+  Future<void> upsertUser(CustomUser user) async {
+    await _sessionsRef.doc(user.id).set(user, SetOptions(merge: true));
   }
 
-  // Обновление данных (используются все параметры пользователя)
-  // Входные данные: используется инстанс класса CustomUser c теми
-  // заполненными данными, которые вы хотите изменить
-  Future<void> updateUser(CustomUser user) async {
-    await _usersRef.doc(user.id).update(user.toJson());
-  }
-
-  // Удаление пользователя из базы данных
-  // Входные данные: почта аккаунта
+  /// Удалить пользователя по id.
   Future<void> deleteUser(String id) async {
-    await _usersRef.doc(id).delete();
+    await _sessionsRef.doc(id).delete();
   }
 }

@@ -1,8 +1,11 @@
 import 'dart:developer';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/features/dialogs/get_instruments.dart';
+import 'package:sergey_sobyanin/repositories/database/database_service.dart';
+import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 
 class MainModule extends StatefulWidget {
   const MainModule({
@@ -19,7 +22,33 @@ class MainModule extends StatefulWidget {
 }
 
 class _MainModuleState extends State<MainModule> {
+  final database = DatabaseService();
   String id = "";
+
+  Future<CustomUser> fetchOrCreateUserById(String id) async {
+    final ref = FirebaseFirestore.instance.collection(collectionPath).doc(id);
+    final snap = await ref.get();
+
+    if (!snap.exists) {
+      // создаём нового пользователя
+      final user = CustomUser(
+        pictureData: '',
+        session: 0,
+        result: {},
+        id: id,
+        // здесь добавь дефолтные значения для остальных обязательных полей
+      );
+      await ref.set(user.toJson());
+      return user;
+    }
+
+    // документ есть → парсим
+    final map = (snap.data() as Map<String, dynamic>?) ?? <String, dynamic>{};
+
+    map.putIfAbsent('id', () => id); // чтобы id точно был в модели
+
+    return CustomUser.fromJson(map);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,15 +96,19 @@ class _MainModuleState extends State<MainModule> {
 
               color: Colors.transparent, // нужен Material-предок для волны
               child: InkWell(
-                onTap: () {
-                  id != ''
-                      ? showDialog(
-                          context: context,
-                          builder: (context) => GetInstrumentsDialog(
-                                id: id,
-                              ))
-                      : 0;
-                },
+                onTap: id != ''
+                    ? () async {
+                        final user = await fetchOrCreateUserById(id);
+
+                        log(user.id.toString());
+
+                        // showDialog(
+                        //     context: context,
+                        //     builder: (context) => GetInstrumentsDialog(
+                        //           id: id,
+                        //         ));
+                      }
+                    : () {},
                 borderRadius: BorderRadius.circular(10),
                 child: Ink(
                   decoration: BoxDecoration(
