@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:image/image.dart' as img;
+import 'package:flutter/foundation.dart';
 
 class ImageService {
   /// Простой ресайз до Full HD (если нужно) + линейное снижение качества.
@@ -61,5 +61,12 @@ class ImageService {
     final sy = boxH / h;
     final s = sx < sy ? sx : sy;
     return s < 1.0 ? s : 1.0; // только уменьшение
+  }
+
+  static Future<Uint8List> bytesFromBase64Async(String b64) => compute((s) => _bytesFromBase64(s), b64);
+
+  static Uint8List _bytesFromBase64(String b64) {
+    final cleaned = b64.split(',').last.replaceAll(RegExp(r'\s'), '');
+    return base64Decode(cleaned);
   }
 }

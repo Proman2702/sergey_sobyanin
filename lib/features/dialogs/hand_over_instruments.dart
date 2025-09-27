@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
 
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
 import 'package:sergey_sobyanin/features/blocking_progress.dart';
+import 'package:sergey_sobyanin/features/dialogs/compare_pics.dart';
 import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 import 'package:sergey_sobyanin/repositories/database/models/user.dart';
@@ -253,7 +255,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                                       borderRadius: BorderRadius.circular(12),
                                                     ),
                                                     child: Text(
-                                                      "$count",
+                                                      "$count шт.",
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontWeight: FontWeight.w800,
@@ -316,14 +318,15 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
 
                                             await Future.delayed(Duration(milliseconds: 200));
 
-                                            final base64pic = await ImageService.compressToBase64(bytes!);
-                                            log('задаунскейлили');
-                                            await database.upsertUser(widget.user
-                                                .copyWith(session: 1, pictureData: base64pic, result: result));
+                                            final firstPic =
+                                                await ImageService.bytesFromBase64Async(widget.user.pictureData);
+                                            final secondPic = bytes;
 
                                             close();
 
                                             Navigator.pop(context);
+
+                                            showDialog(context: context, builder: (context) => ComparePicsDialog());
                                           }
                                         },
                                         borderRadius: BorderRadius.circular(15),

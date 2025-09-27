@@ -252,7 +252,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                                       borderRadius: BorderRadius.circular(12),
                                                     ),
                                                     child: Text(
-                                                      "$count",
+                                                      "$count шт.",
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontWeight: FontWeight.w800,
