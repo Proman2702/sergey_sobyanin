@@ -7,18 +7,18 @@ class CustomColors {
   final List<int> buttonGrad = [0xFF2AC89B, 0xFF3EC065];
   final List<int> greyTile = [0xFF725C77, 0xFFDBB1DA];
 
-  static int mainDark = 0xFF1579B7;
-  static int background = 0xFFF8F8F8;
-  static int bright = 0xff520496;
-  static int main = 0xFFffffff;
-  static int accent = 0xFFE0A135;
-  static int darkAccent = 0xFFD67616;
+  static const int mainDark = 0xFF1579B7;
+  static const int background = 0xFFF8F8F8;
+  static const int bright = 0xff520496;
+  static const int main = 0xFFffffff;
+  static const int accent = 0xFFE0A135;
+  static const int darkAccent = 0xFFD67616;
 
-  static int white = 0xffffffff;
-  static int shadow = 0xffd9d9d9;
-  static int shadowLight = 0xffececec;
-  static int dialogBack = 0xffefd8ec;
-  static int delete = 0xFFDB2A24;
+  static const int white = 0xffffffff;
+  static const int shadow = 0xffd9d9d9;
+  static const int shadowLight = 0xffececec;
+  static const int dialogBack = 0xffefd8ec;
+  static const int delete = 0xFFDB2A24;
 
   List<int> get getBackgroundGrad => backgroundGrad;
   List<int> get getDrawerGrad => drawerGrad;

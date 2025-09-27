@@ -3,7 +3,9 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
+import 'package:sergey_sobyanin/features/blocking_progress.dart';
 import 'package:sergey_sobyanin/features/dialogs/get_instruments.dart';
+import 'package:sergey_sobyanin/features/dialogs/hand_over_instruments.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 
@@ -34,7 +36,7 @@ class _MainModuleState extends State<MainModule> {
       final user = CustomUser(
         pictureData: '',
         session: 0,
-        result: {},
+        result: <String, dynamic>{},
         id: id,
         // здесь добавь дефолтные значения для остальных обязательных полей
       );
@@ -98,15 +100,23 @@ class _MainModuleState extends State<MainModule> {
               child: InkWell(
                 onTap: id != ''
                     ? () async {
+                        final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
+
                         final user = await fetchOrCreateUserById(id);
+                        close();
 
                         log(user.id.toString());
-
-                        // showDialog(
-                        //     context: context,
-                        //     builder: (context) => GetInstrumentsDialog(
-                        //           id: id,
-                        //         ));
+                        user.session == 0
+                            ? showDialog(
+                                context: context,
+                                builder: (context) => GetInstrumentsDialog(
+                                      user: user,
+                                    ))
+                            : showDialog(
+                                context: context,
+                                builder: (context) => HandOverInstrumentsDialog(
+                                      user: user,
+                                    ));
                       }
                     : () {},
                 borderRadius: BorderRadius.circular(10),

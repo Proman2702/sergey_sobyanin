@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/features/screen/screen.dart';
 import 'firebase_options.dart';
 
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: ErrorNotifier.navigatorKey,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {

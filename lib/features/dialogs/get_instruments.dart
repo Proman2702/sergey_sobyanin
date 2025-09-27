@@ -6,6 +6,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
+import 'package:sergey_sobyanin/features/blocking_progress.dart';
+import 'package:sergey_sobyanin/features/error_screen.dart';
+import 'package:sergey_sobyanin/repositories/database/database_service.dart';
+import 'package:sergey_sobyanin/repositories/database/models/user.dart';
+import 'package:sergey_sobyanin/repositories/image/image_service.dart';
 import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
 
 const Map<String, String> INSTRUMENTS = {
@@ -23,9 +28,9 @@ const Map<String, String> INSTRUMENTS = {
 };
 
 class GetInstrumentsDialog extends StatefulWidget {
-  const GetInstrumentsDialog({super.key, required this.id});
+  const GetInstrumentsDialog({super.key, required this.user});
 
-  final String id;
+  final CustomUser user;
   @override
   State<GetInstrumentsDialog> createState() => _GetInstrumentsDialogState();
 }
@@ -35,6 +40,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   double targetHeight = 800;
   double inset = 24;
 
+  final database = DatabaseService();
   PlatformFile? imageFile;
   Uint8List? bytes;
   bool sendingToServer = false;
@@ -84,7 +90,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
         // добавляем в список
         result[name]!.add(rounded);
       }
-
+      log(result.toString());
       log(parseToDisplay(result).toString());
       setState(() {});
     }
@@ -299,8 +305,25 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                       borderRadius: BorderRadius.circular(15),
                                       color: Colors.transparent,
                                       child: InkWell(
-                                        onTap: () {
-                                          setState(() {});
+                                        onTap: () async {
+                                          if (imageFile == null) {
+                                            ErrorNotifier.show('Картинка не загружена!');
+                                          } else if (result.isEmpty) {
+                                            ErrorNotifier.show('Инструменты еще не определены или их нет!');
+                                          } else {
+                                            final close = showBlockingProgress(context, message: 'Сохраняем…');
+
+                                            await Future.delayed(Duration(milliseconds: 200));
+
+                                            final base64pic = await ImageService.compressToBase64(bytes!);
+                                            log('задаунскейлили');
+                                            await database.upsertUser(widget.user
+                                                .copyWith(session: 1, pictureData: base64pic, result: result));
+
+                                            close();
+
+                                            Navigator.pop(context);
+                                          }
                                         },
                                         borderRadius: BorderRadius.circular(15),
                                         child: Ink(
