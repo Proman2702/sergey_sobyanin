@@ -9,7 +9,7 @@ class CustomUser {
   factory CustomUser.fromJson(Map<String, Object?> json) {
     return CustomUser(
       id: (json['id'] as String?) ?? '', // если null → пустая строка
-      pictureData: (json['picture'] as String?) ?? '', // дефолт: пустая строка
+      pictureData: (json['pictureData'] as String?) ?? '', // дефолт: пустая строка
       session: (json['session'] as int?) ?? 0, // дефолт: 0
       result: (json['result'] as Map<String, dynamic>?) ?? <String, dynamic>{},
     );

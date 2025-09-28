@@ -318,15 +318,22 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
 
                                             await Future.delayed(Duration(milliseconds: 200));
 
-                                            final firstPic =
-                                                await ImageService.bytesFromBase64Async(widget.user.pictureData);
-                                            final secondPic = bytes;
+                                            final firstPic = base64Decode(widget.user.pictureData);
+                                            final secondPic = bytes!;
 
                                             close();
 
                                             Navigator.pop(context);
 
-                                            showDialog(context: context, builder: (context) => ComparePicsDialog());
+                                            showDialog(
+                                                context: context,
+                                                builder: (context) => ComparePicsDialog(
+                                                      id: widget.user.id,
+                                                      pic1: firstPic,
+                                                      pic2: secondPic,
+                                                      result1: widget.user.result,
+                                                      result2: result,
+                                                    ));
                                           }
                                         },
                                         borderRadius: BorderRadius.circular(15),
