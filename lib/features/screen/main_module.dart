@@ -94,7 +94,7 @@ class _MainModuleState extends State<MainModule> {
             padding: const EdgeInsets.only(left: 500, top: 5),
             child: Material(
               elevation: 5,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(15),
 
               color: Colors.transparent, // нужен Material-предок для волны
               child: InkWell(
@@ -119,11 +119,11 @@ class _MainModuleState extends State<MainModule> {
                                     ));
                       }
                     : () {},
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(15),
                 child: Ink(
                   decoration: BoxDecoration(
                     color: Color(CustomColors.accent),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: Container(
                       width: 200,

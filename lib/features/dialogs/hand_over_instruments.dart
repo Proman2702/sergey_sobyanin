@@ -13,6 +13,8 @@ import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 import 'package:sergey_sobyanin/repositories/image/image_service.dart';
+import 'package:sergey_sobyanin/repositories/server/accuracy.dart';
+import 'package:sergey_sobyanin/repositories/server/ip.dart';
 import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
 
 const Map<String, String> INSTRUMENTS = {
@@ -46,9 +48,11 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
 
   PlatformFile? imageFile;
   Uint8List? bytes;
+  Uint8List? bytes_from_server;
   bool sendingToServer = false;
   Map<String, dynamic>? data;
-  final Map<String, List<double>> result = {};
+  Map<String, List<double>> result = {};
+  bool showBoxes = false;
 
   Future<void> pickOneImage() async {
     final result = await FilePicker.platform.pickFiles(
@@ -80,9 +84,11 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
     if (imageFile != null) {
       log(imageFile!.name);
       bytes = imageFile?.bytes;
-      data = await UploadAudio().uploadAudio(bytes!, imageFile!.name, 'http://127.0.0.1:5000/upload')
+      data = await UploadImage().uploadImage(bytes!, imageFile!.name, '${IP().getIp}/upload', note: Accuracy().getAcc)
           as Map<String, dynamic>;
 
+      bytes_from_server = base64Decode(data!['img']);
+      result = {};
       for (final item in data!["predictions"]) {
         final name = item["class_name"] as String;
         final conf = (item["confidence"] as num).toDouble();
@@ -93,7 +99,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
         // добавляем в список
         result[name]!.add(rounded);
       }
-
+      log(result.toString());
       log(parseToDisplay(result).toString());
       setState(() {});
     }
@@ -175,20 +181,39 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                       child: Container(
                                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
                                         child: InteractiveViewer(
-                                          child:
-                                              Image.memory(Uint8List.fromList(bytes as List<int>), fit: BoxFit.contain),
-                                        ),
+                                            child: Image.memory(
+                                                Uint8List.fromList(
+                                                    !showBoxes ? bytes! : bytes_from_server ?? bytes as List<int>),
+                                                fit: BoxFit.contain)),
                                       ),
                                     ),
                                     SizedBox(height: 15),
-                                    FloatingActionButton(
-                                      backgroundColor: Color(CustomColors.accent),
-                                      onPressed: setImageWithSendingToServer,
-                                      child: Icon(
-                                        Icons.refresh,
-                                        color: Color(CustomColors.main),
-                                        size: 40,
-                                      ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        FloatingActionButton(
+                                          backgroundColor: Color(CustomColors.accent),
+                                          onPressed: setImageWithSendingToServer,
+                                          child: Icon(
+                                            Icons.refresh,
+                                            color: Color(CustomColors.main),
+                                            size: 40,
+                                          ),
+                                        ),
+                                        SizedBox(width: 20),
+                                        FloatingActionButton(
+                                          backgroundColor: Color(CustomColors.accent),
+                                          onPressed: () {
+                                            showBoxes = !showBoxes;
+                                            setState(() {});
+                                          },
+                                          child: Icon(
+                                            Icons.check_box_outlined,
+                                            color: Color(CustomColors.main),
+                                            size: 40,
+                                          ),
+                                        ),
+                                      ],
                                     )
                                   ],
                                 ),
@@ -209,10 +234,10 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 50),
                                 ),
                               ),
-                              SizedBox(height: 30),
+                              SizedBox(height: 10),
                               Container(
                                   width: 600,
-                                  height: 450,
+                                  height: 490,
                                   alignment: Alignment.topCenter,
                                   child: result.isEmpty
                                       ? ConstrainedBox(
@@ -267,7 +292,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                             );
                                           }).toList(),
                                         )),
-                              SizedBox(height: 60),
+                              SizedBox(height: 40),
                               SizedBox(
                                 width: 500,
                                 child: Row(

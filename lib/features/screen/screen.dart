@@ -7,6 +7,7 @@ import 'package:sergey_sobyanin/etc/colors/gradients/tiles.dart';
 import 'package:sergey_sobyanin/features/screen/history_module.dart';
 import 'package:sergey_sobyanin/features/screen/json_module.dart';
 import 'package:sergey_sobyanin/features/screen/main_module.dart';
+import 'package:sergey_sobyanin/features/settings/settings.dart';
 
 class Screen extends StatefulWidget {
   const Screen({super.key});
@@ -271,6 +272,7 @@ class _ScreenState extends State<Screen> {
                         child: InkWell(
                           onTap: () {
                             log("настройки");
+                            showDialog(context: context, builder: (context) => SettingsDialog());
                           },
                           borderRadius: BorderRadius.circular(10),
                           child: Ink(

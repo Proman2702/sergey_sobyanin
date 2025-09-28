@@ -1,14 +1,17 @@
-class Ip {
-  static String? _ip; // Айпи, если пользователь решит поменять его
-  String defaultIp = 'http://5.tcp.eu.ngrok.io:16781/upload'; // Поле для айпи сервера
+class IP {
+  static final IP _instance = IP._internal();
+  IP._internal();
+  factory IP() => _instance;
 
-  void setIp(String ip) {
-    _ip = ip;
+  String _ip = "http://127.0.0.1:5000";
+
+  String get getIp => _ip;
+
+  void setIp(String newIp) {
+    if (newIp.startsWith("http")) {
+      _ip = newIp;
+    } else {
+      throw ArgumentError("IP должен начинаться с http");
+    }
   }
-
-  void resetIp() {
-    _ip = null;
-  }
-
-  String get getIp => _ip ?? defaultIp;
 }
