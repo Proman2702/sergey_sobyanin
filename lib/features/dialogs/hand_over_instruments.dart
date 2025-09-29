@@ -68,6 +68,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
   Map<String, dynamic>? data;
   Map<String, List<double>> result = {};
   bool showBoxes = false;
+  bool allowRedacting = false;
 
   List<Map<String, dynamic>> convertToJsonList(Map<String, List<double>> input) {
     final List<Map<String, dynamic>> result = [];
@@ -155,6 +156,14 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
         result.putIfAbsent(name, () => []);
         // добавляем в список
         result[name]!.add(rounded);
+      }
+
+      if (!result.isEmpty) {
+        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder) {
+          allowRedacting = true;
+        } else {
+          allowRedacting = false;
+        }
       }
       log(result.toString());
       log(parseToDisplay(result).toString());

@@ -66,6 +66,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   Map<String, dynamic>? data;
   Map<String, List<double>> result = {};
   bool showBoxes = false;
+  bool allowRedacting = false;
 
   Future<void> pickOneImage() async {
     final result = await FilePicker.platform.pickFiles(
@@ -156,6 +157,15 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
       }
       log(result.toString());
       log(parseToDisplay(result).toString());
+
+      if (!result.isEmpty) {
+        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder) {
+          allowRedacting = true;
+        } else {
+          allowRedacting = false;
+        }
+      }
+
       setState(() {});
     }
   }
