@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
 import 'package:sergey_sobyanin/features/blocking_progress.dart';
+import 'package:sergey_sobyanin/features/dialogs/redactor.dart';
 import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 import 'package:sergey_sobyanin/repositories/database/models/user.dart';
@@ -61,10 +62,10 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   final database = DatabaseService();
   PlatformFile? imageFile;
   Uint8List? bytes;
-  Uint8List? bytes_from_server;
+  Uint8List? bytesFromServer;
   bool sendingToServer = false;
   Map<String, dynamic>? data;
-  Map<String, List<double>> result = {};
+  Map<String, dynamic> result = {};
   bool showBoxes = false;
   bool allowRedacting = false;
 
@@ -78,7 +79,12 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     setState(() => imageFile = result.files.single);
   }
 
-  List<Map<String, dynamic>> convertToJsonList(Map<String, List<double>> input) {
+  void updateCallback(Map<String, dynamic> newResult) {
+    result = newResult;
+    setState(() {});
+  }
+
+  List<Map<String, dynamic>> convertToJsonList(Map<String, dynamic> input) {
     final List<Map<String, dynamic>> result = [];
 
     input.forEach((name, confList) {
@@ -100,7 +106,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     return result;
   }
 
-  void downloadJson(String filename, Map<String, List<double>> data) {
+  void downloadJson(String filename, Map<String, dynamic> data) {
     final jsonList = convertToJsonList(data);
 
     final encoder = const JsonEncoder.withIndent('  '); // pretty JSON
@@ -130,7 +136,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     }
   }
 
-  List parseToDisplay(Map<String, List<double>> result) {
+  List parseToDisplay(Map<String, dynamic> result) {
     List items = result.entries.toList();
     return items;
   }
@@ -143,7 +149,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
       data = await UploadImage().uploadImage(bytes!, imageFile!.name, '${IP().getIp}/upload', note: Accuracy().getAcc)
           as Map<String, dynamic>;
 
-      bytes_from_server = base64Decode(data!['img']);
+      bytesFromServer = base64Decode(data!['img']);
       result = {};
       for (final item in data!["predictions"]) {
         final name = item["class_name"] as String;
@@ -248,7 +254,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                         child: InteractiveViewer(
                                             child: Image.memory(
                                                 Uint8List.fromList(
-                                                    !showBoxes ? bytes! : bytes_from_server ?? bytes as List<int>),
+                                                    !showBoxes ? bytes! : bytesFromServer ?? bytes as List<int>),
                                                 fit: BoxFit.contain)),
                                       ),
                                     ),
@@ -409,15 +415,30 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                       elevation: 5,
                                       borderRadius: BorderRadius.circular(15),
                                       color: Colors.transparent,
-                                      child: //InkWell(
-                                          GestureDetector(
-                                        onTap: () {
-                                          setState(() {});
-                                        },
-                                        //borderRadius: BorderRadius.circular(15),
+                                      child: InkWell(
+                                        onTap: allowRedacting
+                                            ? () {
+                                                if (imageFile == null) {
+                                                  ErrorNotifier.show('Картинка не загружена!');
+                                                } else if (result.isEmpty) {
+                                                  ErrorNotifier.show('Инструменты еще не определены или их нет!');
+                                                } else {
+                                                  showDialog(
+                                                      context: context,
+                                                      builder: (context) => RedactorDialog(
+                                                          picture: bytes!,
+                                                          result: result,
+                                                          updateCallback: updateCallback));
+                                                  setState(() {});
+                                                }
+                                              }
+                                            : () {
+                                                ErrorNotifier.show('Редактирование недоступно');
+                                              },
+                                        borderRadius: BorderRadius.circular(15),
                                         child: Ink(
                                           decoration: BoxDecoration(
-                                            color: Color(CustomColors.shadow),
+                                            color: Color(CustomColors.accent),
                                             borderRadius: BorderRadius.circular(15),
                                           ),
                                           child: Container(
