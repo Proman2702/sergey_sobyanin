@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
+import 'dart:html' as html;
 
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
@@ -25,6 +27,20 @@ const Map<String, String> INSTRUMENTS = {
   'otkruvashka': 'Открывашка для банок с маслом',
   'kluch rozkov': 'Ключ рожковый/накидной ¾',
   'bokorezu': 'Бокорезы',
+};
+
+const Map<int, String> INSTRUMENTS_INDEXED = {
+  0: 'screwdriver -',
+  1: 'screwdriver +',
+  2: 'screwdriver x',
+  3: 'kolovorot',
+  4: 'passatizi kontro',
+  5: 'passatizi',
+  6: 'shernitsa',
+  7: 'razvodnoy kluch',
+  8: 'otkruvashka',
+  9: 'kluch rozkov',
+  10: 'bokorezu'
 };
 
 class ComparePicsDialog extends StatefulWidget {
@@ -64,6 +80,51 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
     }
 
     return true;
+  }
+
+  List<Map<String, dynamic>> convertToJsonList(Map<String, dynamic> input) {
+    final List<Map<String, dynamic>> result = [];
+
+    input.forEach((name, confList) {
+      // ищем id по имени в INSTRUMENTS_INDEXED
+      final entry =
+          INSTRUMENTS_INDEXED.entries.firstWhere((e) => e.value == name, orElse: () => const MapEntry(-1, ''));
+
+      if (entry.key == -1) return; // если имя не найдено — пропускаем
+
+      for (final conf in confList) {
+        result.add({
+          "id": entry.key,
+          "name": entry.value,
+          "conf": double.parse(conf.toStringAsFixed(4)),
+        });
+      }
+    });
+
+    return result;
+  }
+
+  void downloadJsonResult(String filename, Map<String, dynamic> data1, Map<String, dynamic> data2, bool overall) {
+    final jsonList1 = convertToJsonList(data1);
+    final jsonList2 = convertToJsonList(data2);
+
+    final jsonListFinal = {'instruments_got': jsonList1, 'instruments_handed_over': jsonList2, 'result': overall};
+
+    final encoder = const JsonEncoder.withIndent('  '); // pretty JSON
+    final jsonStr = encoder.convert(jsonListFinal);
+
+    final bytes = utf8.encode(jsonStr);
+    final blob = html.Blob([bytes], 'application/json;charset=utf-8');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    final anchor = html.AnchorElement(href: url)
+      ..download = filename
+      ..style.display = 'none';
+
+    html.document.body!.children.add(anchor);
+    anchor.click();
+    anchor.remove();
+    html.Url.revokeObjectUrl(url);
   }
 
   @override
@@ -199,6 +260,49 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                               elevation: 5,
                               borderRadius: BorderRadius.circular(15),
                               color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  downloadJsonResult('exported_overall.json', widget.result1, widget.result2,
+                                      compareCountsEqual(widget.result1, widget.result2));
+                                },
+                                borderRadius: BorderRadius.circular(15),
+                                child: Ink(
+                                  decoration: BoxDecoration(
+                                    color: Color(CustomColors.accent),
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  child: Container(
+                                      width: 80,
+                                      height: 50,
+                                      alignment: Alignment.center,
+                                      padding: EdgeInsets.only(left: 8),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.save_outlined,
+                                            color: Color(CustomColors.main),
+                                            size: 30,
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(bottom: 15.0),
+                                            child: Text(
+                                              'JSON',
+                                              style: TextStyle(
+                                                  color: Color(CustomColors.main),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w800),
+                                            ),
+                                          )
+                                        ],
+                                      )),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 30),
+                            Material(
+                              elevation: 5,
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.transparent,
                               child: //InkWell(
                                   GestureDetector(
                                 onTap: () {
@@ -222,7 +326,7 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                                 ),
                               ),
                             ),
-                            SizedBox(width: 50),
+                            SizedBox(width: 30),
                             Material(
                               elevation: 5,
                               borderRadius: BorderRadius.circular(15),

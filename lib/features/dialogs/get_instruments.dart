@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
+import 'dart:html' as html;
 
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
@@ -28,6 +29,20 @@ const Map<String, String> INSTRUMENTS = {
   'otkruvashka': 'Открывашка для банок с маслом',
   'kluch rozkov': 'Ключ рожковый/накидной ¾',
   'bokorezu': 'Бокорезы',
+};
+
+const Map<int, String> INSTRUMENTS_INDEXED = {
+  0: 'screwdriver -',
+  1: 'screwdriver +',
+  2: 'screwdriver x',
+  3: 'kolovorot',
+  4: 'passatizi kontro',
+  5: 'passatizi',
+  6: 'shernitsa',
+  7: 'razvodnoy kluch',
+  8: 'otkruvashka',
+  9: 'kluch rozkov',
+  10: 'bokorezu'
 };
 
 class GetInstrumentsDialog extends StatefulWidget {
@@ -60,6 +75,48 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     );
     if (result == null) return;
     setState(() => imageFile = result.files.single);
+  }
+
+  List<Map<String, dynamic>> convertToJsonList(Map<String, List<double>> input) {
+    final List<Map<String, dynamic>> result = [];
+
+    input.forEach((name, confList) {
+      // ищем id по имени в INSTRUMENTS_INDEXED
+      final entry =
+          INSTRUMENTS_INDEXED.entries.firstWhere((e) => e.value == name, orElse: () => const MapEntry(-1, ''));
+
+      if (entry.key == -1) return; // если имя не найдено — пропускаем
+
+      for (final conf in confList) {
+        result.add({
+          "id": entry.key,
+          "name": entry.value,
+          "conf": double.parse(conf.toStringAsFixed(4)),
+        });
+      }
+    });
+
+    return result;
+  }
+
+  void downloadJson(String filename, Map<String, List<double>> data) {
+    final jsonList = convertToJsonList(data);
+
+    final encoder = const JsonEncoder.withIndent('  '); // pretty JSON
+    final jsonStr = encoder.convert(jsonList);
+
+    final bytes = utf8.encode(jsonStr);
+    final blob = html.Blob([bytes], 'application/json;charset=utf-8');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    final anchor = html.AnchorElement(href: url)
+      ..download = filename
+      ..style.display = 'none';
+
+    html.document.body!.children.add(anchor);
+    anchor.click();
+    anchor.remove();
+    html.Url.revokeObjectUrl(url);
   }
 
   void setImage() async {
@@ -292,10 +349,52 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                         )),
                               SizedBox(height: 60),
                               SizedBox(
-                                width: 500,
+                                width: 600,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
+                                    Material(
+                                      elevation: 5,
+                                      borderRadius: BorderRadius.circular(15),
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () async {
+                                          downloadJson('exported_get.json', result);
+                                        },
+                                        borderRadius: BorderRadius.circular(15),
+                                        child: Ink(
+                                          decoration: BoxDecoration(
+                                            color: Color(CustomColors.accent),
+                                            borderRadius: BorderRadius.circular(15),
+                                          ),
+                                          child: Container(
+                                              width: 80,
+                                              height: 50,
+                                              alignment: Alignment.center,
+                                              padding: EdgeInsets.only(left: 8),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.save_outlined,
+                                                    color: Color(CustomColors.main),
+                                                    size: 30,
+                                                  ),
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(bottom: 15.0),
+                                                    child: Text(
+                                                      'JSON',
+                                                      style: TextStyle(
+                                                          color: Color(CustomColors.main),
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w800),
+                                                    ),
+                                                  )
+                                                ],
+                                              )),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 30),
                                     Material(
                                       elevation: 5,
                                       borderRadius: BorderRadius.circular(15),
@@ -325,7 +424,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 50),
+                                    SizedBox(width: 30),
                                     Material(
                                       elevation: 5,
                                       borderRadius: BorderRadius.circular(15),
