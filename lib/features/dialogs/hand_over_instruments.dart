@@ -10,6 +10,7 @@ import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
 import 'package:sergey_sobyanin/features/blocking_progress.dart';
 import 'package:sergey_sobyanin/features/dialogs/compare_pics.dart';
+import 'package:sergey_sobyanin/features/dialogs/redactor.dart';
 import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 import 'package:sergey_sobyanin/repositories/database/models/user.dart';
@@ -66,11 +67,16 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
   Uint8List? bytes_from_server;
   bool sendingToServer = false;
   Map<String, dynamic>? data;
-  Map<String, List<double>> result = {};
+  Map<String, dynamic> result = {};
   bool showBoxes = false;
   bool allowRedacting = false;
 
-  List<Map<String, dynamic>> convertToJsonList(Map<String, List<double>> input) {
+  void updateCallback(Map<String, dynamic> newResult) {
+    result = newResult;
+    setState(() {});
+  }
+
+  List<Map<String, dynamic>> convertToJsonList(Map<String, dynamic> input) {
     final List<Map<String, dynamic>> result = [];
 
     input.forEach((name, confList) {
@@ -92,7 +98,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
     return result;
   }
 
-  void downloadJson(String filename, Map<String, List<double>> data) {
+  void downloadJson(String filename, Map<String, dynamic> data) {
     final jsonList = convertToJsonList(data);
 
     final encoder = const JsonEncoder.withIndent('  '); // pretty JSON
@@ -132,7 +138,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
     }
   }
 
-  List parseToDisplay(Map<String, List<double>> result) {
+  List parseToDisplay(Map<String, dynamic> result) {
     List items = result.entries.toList();
     return items;
   }
@@ -159,14 +165,12 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
       }
 
       if (!result.isEmpty) {
-        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder) {
+        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
           allowRedacting = true;
         } else {
           allowRedacting = false;
         }
       }
-      log(result.toString());
-      log(parseToDisplay(result).toString());
       setState(() {});
     }
   }
@@ -300,10 +304,10 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 50),
                                 ),
                               ),
-                              SizedBox(height: 10),
+                              SizedBox(height: 30),
                               Container(
                                   width: 600,
-                                  height: 490,
+                                  height: 450,
                                   alignment: Alignment.topCenter,
                                   child: result.isEmpty
                                       ? ConstrainedBox(
@@ -410,15 +414,30 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                       elevation: 5,
                                       borderRadius: BorderRadius.circular(15),
                                       color: Colors.transparent,
-                                      child: //InkWell(
-                                          GestureDetector(
-                                        onTap: () {
-                                          setState(() {});
-                                        },
-                                        //borderRadius: BorderRadius.circular(15),
+                                      child: InkWell(
+                                        onTap: allowRedacting
+                                            ? () {
+                                                if (imageFile == null) {
+                                                  ErrorNotifier.show('Картинка не загружена!');
+                                                } else if (result.isEmpty) {
+                                                  ErrorNotifier.show('Инструменты еще не определены или их нет!');
+                                                } else {
+                                                  showDialog(
+                                                      context: context,
+                                                      builder: (context) => RedactorDialog(
+                                                          picture: bytes!,
+                                                          result: result,
+                                                          updateCallback: updateCallback));
+                                                  setState(() {});
+                                                }
+                                              }
+                                            : () {
+                                                ErrorNotifier.show('Редактирование недоступно');
+                                              },
+                                        borderRadius: BorderRadius.circular(15),
                                         child: Ink(
                                           decoration: BoxDecoration(
-                                            color: Color(CustomColors.shadow),
+                                            color: Color(CustomColors.accent),
                                             borderRadius: BorderRadius.circular(15),
                                           ),
                                           child: Container(

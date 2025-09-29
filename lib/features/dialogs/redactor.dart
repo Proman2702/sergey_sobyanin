@@ -6,6 +6,7 @@ import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'dart:math' as math;
 
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
+import 'package:sergey_sobyanin/features/error_screen.dart';
 
 const Map<String, String> INSTRUMENTS = {
   'screwdriver -': 'Отвертка "-"',
@@ -19,6 +20,20 @@ const Map<String, String> INSTRUMENTS = {
   'otkruvashka': 'Открывашка для банок с маслом',
   'kluch rozkov': 'Ключ рожковый/накидной ¾',
   'bokorezu': 'Бокорезы',
+};
+
+const Map<int, String> INSTRUMENTS_INDEXED = {
+  0: 'screwdriver -',
+  1: 'screwdriver +',
+  2: 'screwdriver x',
+  3: 'kolovorot',
+  4: 'passatizi kontro',
+  5: 'passatizi',
+  6: 'shernitsa',
+  7: 'razvodnoy kluch',
+  8: 'otkruvashka',
+  9: 'kluch rozkov',
+  10: 'bokorezu'
 };
 
 class RedactorDialog extends StatefulWidget {
@@ -37,6 +52,9 @@ class _RedactorDialogState extends State<RedactorDialog> {
   double targetHeight = 600;
   double inset = 24;
 
+  final _controller = TextEditingController();
+  String filter = '';
+
   late Map<String, dynamic> newResult;
 
   List parseToDisplay(Map<String, dynamic> result) {
@@ -49,6 +67,15 @@ class _RedactorDialogState extends State<RedactorDialog> {
     newResult = widget.result;
     super.initState();
   }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Map<String, dynamic> filteredResult(String filter) => Map.fromEntries(
+      newResult.entries.where((e) => INSTRUMENTS[e.key].toString().toLowerCase().startsWith(filter.toLowerCase())));
 
   @override
   Widget build(BuildContext context) {
@@ -105,25 +132,116 @@ class _RedactorDialogState extends State<RedactorDialog> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text('Редактирование'),
+                              SizedBox(height: 15),
+                              Text(
+                                'Редактирование',
+                                style: TextStyle(
+                                    color: Color(CustomColors.main), fontSize: 28, fontWeight: FontWeight.w600),
+                              ),
+                              SizedBox(height: 15),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                      width: 320,
+                                      height: 40,
+                                      alignment: Alignment.centerLeft,
+                                      decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(15),
+                                          boxShadow: [
+                                            BoxShadow(
+                                                offset: Offset(0, 4),
+                                                blurRadius: 4,
+                                                spreadRadius: 0,
+                                                color: Colors.black26)
+                                          ]),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            height: 40,
+                                            width: 40,
+                                            alignment: Alignment.centerRight,
+                                            child: Icon(
+                                              Icons.search,
+                                              color: Color(CustomColors.bright),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 280,
+                                            height: 40,
+                                            child: TextField(
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.w700, fontSize: 16, color: Colors.black87),
+                                              maxLength: 16,
+                                              onChanged: (value) => setState(() {
+                                                filter = value;
+                                              }),
+                                              decoration: InputDecoration(
+                                                floatingLabelBehavior: FloatingLabelBehavior.never,
+                                                contentPadding: EdgeInsets.only(left: 10, bottom: 20),
+                                                counterText: "",
+                                                border: InputBorder.none,
+                                                labelText: "Фильтр",
+                                                labelStyle: TextStyle(
+                                                    color: Colors.black12, fontSize: 16, fontWeight: FontWeight.w700),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )),
+                                  SizedBox(width: 20),
+                                  SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: PopupMenuButton<String>(
+                                          onSelected: (value) {
+                                            if (newResult.keys.contains(value)) {
+                                              ErrorNotifier.show('Такой инструмент уже существует');
+                                            } else {
+                                              newResult.addAll({
+                                                value: [1.0]
+                                              });
+                                            }
+
+                                            setState(() {});
+                                          },
+                                          itemBuilder: (context) => INSTRUMENTS_INDEXED.values
+                                              .map((name) => PopupMenuItem(
+                                                    value: name,
+                                                    child: Text(INSTRUMENTS[name]!),
+                                                  ))
+                                              .toList(),
+                                          child: FloatingActionButton(
+                                            backgroundColor: Color(CustomColors.accent),
+                                            onPressed: null,
+                                            child: Icon(
+                                              Icons.edit_document,
+                                              color: Color(CustomColors.main),
+                                            ), // кнопку сам PopupMenuButton обрабатывает
+                                          )))
+                                ],
+                              ),
+                              SizedBox(height: 15),
                               Container(
                                   width: 450,
-                                  height: 500,
+                                  height: 400,
                                   alignment: Alignment.topCenter,
                                   child: GridView.count(
                                     crossAxisCount: 1,
-                                    crossAxisSpacing: 12, // меньше отступы между плитками
+                                    crossAxisSpacing: 2,
                                     mainAxisSpacing: 8,
-                                    childAspectRatio: 400 / 60, // ширина / высота (пример: 400х60)
+                                    childAspectRatio: 400 / 60,
                                     shrinkWrap: true,
-                                    children: parseToDisplay(newResult).map((entry) {
+                                    children: parseToDisplay(filteredResult(filter)).map((entry) {
                                       final name = INSTRUMENTS[entry.key]!;
                                       final count = entry.value.length;
 
                                       return Container(
                                         width: 400,
-                                        height: 60,
+                                        height: 45,
                                         child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             // минус
                                             SizedBox(
@@ -136,19 +254,19 @@ class _RedactorDialogState extends State<RedactorDialog> {
                                                   backgroundColor: Color(CustomColors.accent),
                                                 ),
                                                 onPressed: () {
-                                                  newResult[entry.key] = newResult[entry.key].removeLast();
+                                                  newResult[entry.key].removeLast();
 
-                                                  //if (newResult[entry.key].isEmpty) {
-                                                  //newResult.remove(entry.key);
-                                                  //}
-                                                  //;
+                                                  if (newResult[entry.key].isEmpty) {
+                                                    newResult.remove(entry.key);
+                                                  }
+
                                                   setState(() {});
                                                 },
-                                                child: Icon(Icons.remove, size: 18, color: Color(CustomColors.main)),
+                                                child: Icon(Icons.remove, size: 20, color: Color(CustomColors.main)),
                                               ),
                                             ),
 
-                                            const SizedBox(width: 20),
+                                            const SizedBox(width: 15),
 
                                             // центральный контейнер (300 px)
                                             Container(
@@ -164,12 +282,12 @@ class _RedactorDialogState extends State<RedactorDialog> {
                                                   Flexible(
                                                     child: Text(
                                                       name,
-                                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                                                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                                                       overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                   Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                                     decoration: BoxDecoration(
                                                       color: Color(CustomColors.darkAccent),
                                                       borderRadius: BorderRadius.circular(10),
@@ -186,7 +304,7 @@ class _RedactorDialogState extends State<RedactorDialog> {
                                               ),
                                             ),
 
-                                            const SizedBox(width: 20),
+                                            const SizedBox(width: 15),
 
                                             // плюс
                                             SizedBox(
@@ -198,15 +316,48 @@ class _RedactorDialogState extends State<RedactorDialog> {
                                                   shape: const CircleBorder(),
                                                   backgroundColor: Color(CustomColors.accent),
                                                 ),
-                                                onPressed: () {},
-                                                child: Icon(Icons.add, size: 18, color: Color(CustomColors.main)),
+                                                onPressed: () {
+                                                  newResult[entry.key].add(1.0);
+
+                                                  setState(() {});
+                                                },
+                                                child: Icon(Icons.add, size: 20, color: Color(CustomColors.main)),
                                               ),
                                             ),
                                           ],
                                         ),
                                       );
                                     }).toList(),
-                                  ))
+                                  )),
+                              const SizedBox(height: 15),
+                              Material(
+                                elevation: 5,
+                                borderRadius: BorderRadius.circular(15),
+
+                                color: Colors.transparent, // нужен Material-предок для волны
+                                child: InkWell(
+                                  onTap: () {
+                                    widget.updateCallback(newResult);
+                                    Navigator.pop(context);
+                                  },
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: Ink(
+                                    decoration: BoxDecoration(
+                                      color: Color(CustomColors.accent),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: Container(
+                                        width: 200,
+                                        height: 45,
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          'Сохранить',
+                                          style:
+                                              TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w500),
+                                        )),
+                                  ),
+                                ),
+                              )
                             ],
                           ),
                         )

@@ -66,6 +66,8 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
   double targetWidth = 1400;
   double targetHeight = 800;
   double inset = 24;
+  bool visible1 = true;
+  bool visible2 = true;
 
   final database = DatabaseService();
 
@@ -172,9 +174,27 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Полученные инструменты',
-                                  style: TextStyle(color: Color(CustomColors.main), fontSize: 18),
+                                SizedBox(
+                                  height: 30,
+                                  width: 650,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Полученные инструменты',
+                                        style: TextStyle(color: Color(CustomColors.main), fontSize: 18),
+                                      ),
+                                      IconButton(
+                                          onPressed: () {
+                                            visible1 = !visible1;
+                                            setState(() {});
+                                          },
+                                          icon: Icon(
+                                            visible1 ? Icons.visibility : Icons.visibility_off,
+                                            color: Color(CustomColors.main),
+                                          ))
+                                    ],
+                                  ),
                                 ),
                                 SizedBox(height: 5),
                                 Container(
@@ -182,10 +202,31 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                                   height: 500,
                                   decoration: BoxDecoration(
                                       color: Color(CustomColors.shadow), borderRadius: BorderRadius.circular(15)),
-                                  child: InteractiveViewer(
-                                    child:
-                                        Image.memory(Uint8List.fromList(widget.pic1 as List<int>), fit: BoxFit.contain),
-                                  ),
+                                  child: visible1
+                                      ? InteractiveViewer(
+                                          child: Image.memory(Uint8List.fromList(widget.pic1 as List<int>),
+                                              fit: BoxFit.contain))
+                                      : SingleChildScrollView(
+                                          child: Container(
+                                            width: 200,
+                                            height: 500,
+                                            decoration: BoxDecoration(
+                                              color: Color(CustomColors.main),
+                                              borderRadius: BorderRadius.circular(15),
+                                            ),
+                                            child: ListView.builder(
+                                                padding: const EdgeInsets.all(8),
+                                                itemCount: widget.result1.keys.length,
+                                                itemBuilder: (BuildContext context, int index) {
+                                                  return Text(
+                                                      "${INSTRUMENTS[widget.result1.keys.toList()[index]]} - ${widget.result1[widget.result1.keys.toList()[index]].length} шт.",
+                                                      style: TextStyle(
+                                                          fontSize: 20,
+                                                          color: Color(CustomColors.bright),
+                                                          fontWeight: FontWeight.w800));
+                                                }),
+                                          ),
+                                        ),
                                 )
                               ],
                             ),
@@ -193,9 +234,27 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Сданные инструменты',
-                                  style: TextStyle(color: Color(CustomColors.main), fontSize: 18),
+                                SizedBox(
+                                  height: 30,
+                                  width: 650,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Полученные инструменты',
+                                        style: TextStyle(color: Color(CustomColors.main), fontSize: 18),
+                                      ),
+                                      IconButton(
+                                          onPressed: () {
+                                            visible2 = !visible2;
+                                            setState(() {});
+                                          },
+                                          icon: Icon(
+                                            visible2 ? Icons.visibility : Icons.visibility_off,
+                                            color: Color(CustomColors.main),
+                                          ))
+                                    ],
+                                  ),
                                 ),
                                 SizedBox(height: 5),
                                 Container(
@@ -203,10 +262,31 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                                   height: 500,
                                   decoration: BoxDecoration(
                                       color: Color(CustomColors.shadow), borderRadius: BorderRadius.circular(15)),
-                                  child: InteractiveViewer(
-                                    child:
-                                        Image.memory(Uint8List.fromList(widget.pic2 as List<int>), fit: BoxFit.contain),
-                                  ),
+                                  child: visible2
+                                      ? InteractiveViewer(
+                                          child: Image.memory(Uint8List.fromList(widget.pic2 as List<int>),
+                                              fit: BoxFit.contain))
+                                      : SingleChildScrollView(
+                                          child: Container(
+                                            width: 200,
+                                            height: 500,
+                                            decoration: BoxDecoration(
+                                              color: Color(CustomColors.main),
+                                              borderRadius: BorderRadius.circular(15),
+                                            ),
+                                            child: ListView.builder(
+                                                padding: const EdgeInsets.all(8),
+                                                itemCount: widget.result2.keys.length,
+                                                itemBuilder: (BuildContext context, int index) {
+                                                  return Text(
+                                                      "${INSTRUMENTS[widget.result2.keys.toList()[index]]} - ${widget.result2[widget.result2.keys.toList()[index]].length} шт.",
+                                                      style: TextStyle(
+                                                          fontSize: 20,
+                                                          color: Color(CustomColors.bright),
+                                                          fontWeight: FontWeight.w800));
+                                                }),
+                                          ),
+                                        ),
                                 )
                               ],
                             ),
@@ -216,7 +296,7 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                         SizedBox(
                           width: 1350,
                           child: Text(
-                            'Нажмите на картинки, чтобы увидеть список инструментов',
+                            'Нажмите на глазик сверху над картинкой, чтобы увидеть список инструментов',
                             style: TextStyle(color: Colors.black38, fontSize: 18, fontWeight: FontWeight.w700),
                           ),
                         ),

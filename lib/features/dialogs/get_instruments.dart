@@ -161,11 +161,9 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
         // добавляем в список
         result[name]!.add(rounded);
       }
-      log(result.toString());
-      log(parseToDisplay(result).toString());
 
       if (!result.isEmpty) {
-        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder) {
+        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
           allowRedacting = true;
         } else {
           allowRedacting = false;
