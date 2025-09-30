@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 
-/// ВИДЖЕТ диалога с блокирующим прогрессом.
-/// Безопасен к back, тапам по фону и работает на Flutter Web.
 class BlockingProgressDialog extends StatelessWidget {
   final String? message;
 
@@ -10,7 +8,6 @@ class BlockingProgressDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Нельзя закрыть системной "назад"
     return PopScope(
       canPop: false,
       child: Dialog(
@@ -51,7 +48,6 @@ CloseProgress showBlockingProgress(
   BuildContext context, {
   String? message,
 }) {
-  // Сохраняем конкретный navigator (без привязки к жизненному циклу виджета)
   final navigator = Navigator.of(context, rootNavigator: true);
 
   showDialog<void>(

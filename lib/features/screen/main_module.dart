@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/features/blocking_progress.dart';
@@ -8,7 +7,6 @@ import 'package:sergey_sobyanin/features/dialogs/get_instruments.dart';
 import 'package:sergey_sobyanin/features/dialogs/hand_over_instruments.dart';
 import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
-import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 
 class MainModule extends StatefulWidget {
   const MainModule({
@@ -25,28 +23,8 @@ class MainModule extends StatefulWidget {
 }
 
 class _MainModuleState extends State<MainModule> {
-  final database = DatabaseService();
+  final database = UserDatabaseService();
   String id = "";
-
-  Future<CustomUser> fetchOrCreateUserById(String id) async {
-    final ref = FirebaseFirestore.instance.collection(collectionPath).doc(id);
-    final snap = await ref.get();
-
-    if (!snap.exists) {
-      final user = CustomUser(
-        pictureData: '',
-        session: 0,
-        result: <String, dynamic>{},
-        id: id,
-      );
-      await ref.set(user.toJson());
-      return user;
-    }
-
-    final map = (snap.data()) ?? {};
-    map.putIfAbsent('id', () => id);
-    return CustomUser.fromJson(map);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +71,7 @@ class _MainModuleState extends State<MainModule> {
                     ? () async {
                         final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
 
-                        final user = await fetchOrCreateUserById(id);
+                        final user = await database.fetchOrCreateElementById(id);
                         close();
 
                         log(user.id.toString());

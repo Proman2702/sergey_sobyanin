@@ -29,7 +29,7 @@ class GetInstrumentsDialog extends StatefulWidget {
 }
 
 class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
-  final database = DatabaseService();
+  final database = UserDatabaseService();
   PlatformFile? imageFile;
   Uint8List? bytes;
   Uint8List? bytesFromServer;
@@ -386,7 +386,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
 
                                       final base64pic = await ImageService.compressToBase64(bytes!);
                                       log('задаунскейлили');
-                                      await database.upsertUser(
+                                      await database.upsertElement(
                                           widget.user.copyWith(session: 1, pictureData: base64pic, result: result));
 
                                       close();

@@ -29,7 +29,7 @@ class HandOverInstrumentsDialog extends StatefulWidget {
 }
 
 class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
-  final database = DatabaseService();
+  final database = UserDatabaseService();
 
   PlatformFile? imageFile;
   Uint8List? bytes;

@@ -11,6 +11,7 @@ import 'package:sergey_sobyanin/features/dialogs/change_confirmation.dart';
 import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
+import 'package:sergey_sobyanin/repositories/database/models/history_tile.dart';
 
 class ComparePicsDialog extends StatefulWidget {
   const ComparePicsDialog(
@@ -51,7 +52,22 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
     setState(() {});
   }
 
-  final database = DatabaseService();
+  final database = UserDatabaseService();
+  final historyDatabase = HistoryDatabaseService();
+
+  Map<String, int> missingItems(Map<String, dynamic> dict1, Map<String, dynamic> dict2) {
+    final result = <String, int>{};
+
+    dict1.forEach((key, values) {
+      final need = values.length;
+      final have = dict2[key]?.length ?? 0;
+      if (need > have) {
+        result[key] = need - have;
+      }
+    });
+
+    return result;
+  }
 
   bool compareCountsEqual(Map<String, dynamic> dict1, Map<String, dynamic> dict2) {
     final allKeys = {...dict1.keys, ...dict2.keys};
@@ -383,7 +399,16 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                         SizedBox(width: 30),
                         CustomButton(
                           onTap: () async {
-                            await database.deleteUser(widget.id);
+                            await database.deleteElement(widget.id);
+
+                            final time = DateTime.now().toIso8601String();
+
+                            await historyDatabase.upsertElement(HistoryTile(
+                                id: widget.id,
+                                time: time,
+                                result: boolResult.toString(),
+                                missing: boolResult ? {} : missingItems(widget.result1, widget.result2)));
+
                             Navigator.pop(context);
                           },
                           text: 'Готово',

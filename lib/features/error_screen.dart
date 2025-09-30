@@ -9,10 +9,8 @@ class ErrorNotifier {
     String message, {
     Duration duration = const Duration(seconds: 3),
   }) {
-    // Попытка получить OverlayState сразу
     final overlay = navigatorKey.currentState?.overlay;
     if (overlay == null) {
-      // Если ещё нет (ранний вызов) — подождём первый кадр
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final lateOverlay = navigatorKey.currentState?.overlay;
         if (lateOverlay != null) {
@@ -25,12 +23,11 @@ class ErrorNotifier {
   }
 
   static void _insertToast(OverlayState overlay, String message, Duration duration) {
-    // Позиция тоста зависит от количества активных
     final index = _entries.length;
     final entry = OverlayEntry(
       builder: (context) {
         return Positioned(
-          top: 40.0 + index * 64.0, // стопка вниз
+          top: 40.0 + index * 64.0,
           right: 20,
           child: Material(
             color: Colors.transparent,
@@ -44,11 +41,9 @@ class ErrorNotifier {
     overlay.insert(entry);
 
     Future.delayed(duration, () {
-      // безопасное удаление и сдвиг оставшихся
       if (_entries.contains(entry)) {
         entry.remove();
         _entries.remove(entry);
-        // Перестроим оставшиеся, чтобы они «подъехали» вверх
         for (final e in _entries) {
           e.markNeedsBuild();
         }
