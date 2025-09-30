@@ -5,9 +5,9 @@ import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/tiles.dart';
 import 'package:sergey_sobyanin/features/screen/history_module.dart';
-import 'package:sergey_sobyanin/features/screen/json_module.dart';
 import 'package:sergey_sobyanin/features/screen/main_module.dart';
 import 'package:sergey_sobyanin/features/settings/settings.dart';
+import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
 
 class Screen extends StatefulWidget {
   const Screen({super.key});
@@ -94,159 +94,77 @@ class _ScreenState extends State<Screen> {
                           ),
                         ),
                         SizedBox(height: 30),
-                        Material(
-                          elevation: 5,
-                          borderRadius: BorderRadius.circular(15),
-                          color: Colors.transparent,
-                          child: InkWell(
+                        CustomButtonModified(
                             onTap: () {
                               setState(() {
                                 chosen_module = 0;
                               });
                             },
-                            borderRadius: BorderRadius.circular(15),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                color: chosen_module == 0 ? Color(CustomColors.accent) : Color(CustomColors.main),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Container(
-                                width: 320,
-                                height: 60,
-                                alignment: Alignment.center,
-                                child: Row(
-                                  children: [
-                                    SizedBox(width: 20),
-                                    Icon(
-                                      Icons.home_rounded,
-                                      size: 35,
-                                      color: Color(CustomColors.mainDark),
-                                    ),
-                                    SizedBox(width: 15),
-                                    Container(
-                                      height: 40,
-                                      width: 3,
-                                      color: Color(CustomColors.shadow),
-                                    ),
-                                    SizedBox(width: 20),
-                                    Text(
-                                      'Главная',
-                                      style: TextStyle(
-                                          fontSize: 25,
-                                          color: chosen_module == 0
-                                              ? Color(CustomColors.main)
-                                              : Color(CustomColors.darkAccent),
-                                          fontWeight: FontWeight.w600),
-                                    )
-                                  ],
+                            width: 320,
+                            height: 60,
+                            color: chosen_module == 0 ? Color(CustomColors.accent) : Color(CustomColors.main),
+                            child: Row(
+                              children: [
+                                SizedBox(width: 20),
+                                Icon(
+                                  Icons.home_rounded,
+                                  size: 35,
+                                  color: Color(CustomColors.mainDark),
                                 ),
+                                SizedBox(width: 15),
+                                Container(
+                                  height: 40,
+                                  width: 3,
+                                  color: Color(CustomColors.shadow),
+                                ),
+                                SizedBox(width: 20),
+                                Text(
+                                  'Главная',
+                                  style: TextStyle(
+                                      fontSize: 25,
+                                      color: chosen_module == 0
+                                          ? Color(CustomColors.main)
+                                          : Color(CustomColors.darkAccent),
+                                      fontWeight: FontWeight.w600),
+                                )
+                              ],
+                            )),
+                        SizedBox(height: 20),
+                        CustomButtonModified(
+                          onTap: () {
+                            setState(() {
+                              chosen_module = 1;
+                            });
+                          },
+                          width: 320,
+                          height: 60,
+                          color: chosen_module == 1 ? Color(CustomColors.accent) : Color(CustomColors.main),
+                          child: Row(
+                            children: [
+                              SizedBox(width: 20),
+                              Icon(
+                                Icons.access_time,
+                                size: 35,
+                                color: Color(CustomColors.mainDark),
                               ),
-                            ),
+                              SizedBox(width: 15),
+                              Container(
+                                height: 40,
+                                width: 3,
+                                color: Color(CustomColors.shadow),
+                              ),
+                              SizedBox(width: 20),
+                              Text(
+                                'История',
+                                style: TextStyle(
+                                    fontSize: 25,
+                                    color:
+                                        chosen_module == 1 ? Color(CustomColors.main) : Color(CustomColors.darkAccent),
+                                    fontWeight: FontWeight.w600),
+                              )
+                            ],
                           ),
                         ),
-                        SizedBox(height: 20),
-                        Material(
-                          elevation: 5,
-                          borderRadius: BorderRadius.circular(15),
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                chosen_module = 1;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(15),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                color: chosen_module == 1 ? Color(CustomColors.accent) : Color(CustomColors.main),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Container(
-                                width: 320,
-                                height: 60,
-                                alignment: Alignment.center,
-                                child: Row(
-                                  children: [
-                                    SizedBox(width: 20),
-                                    Icon(
-                                      Icons.access_time,
-                                      size: 35,
-                                      color: Color(CustomColors.mainDark),
-                                    ),
-                                    SizedBox(width: 15),
-                                    Container(
-                                      height: 40,
-                                      width: 3,
-                                      color: Color(CustomColors.shadow),
-                                    ),
-                                    SizedBox(width: 20),
-                                    Text(
-                                      'История',
-                                      style: TextStyle(
-                                          fontSize: 25,
-                                          color: chosen_module == 1
-                                              ? Color(CustomColors.main)
-                                              : Color(CustomColors.darkAccent),
-                                          fontWeight: FontWeight.w600),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        Material(
-                          elevation: 5,
-                          borderRadius: BorderRadius.circular(15),
-
-                          color: Colors.transparent, // нужен Material-предок для волны
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                chosen_module = 2;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(15),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                color: chosen_module == 2 ? Color(CustomColors.accent) : Color(CustomColors.main),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Container(
-                                width: 320,
-                                height: 60,
-                                alignment: Alignment.center,
-                                child: Row(
-                                  children: [
-                                    SizedBox(width: 20),
-                                    Icon(
-                                      Icons.code,
-                                      size: 35,
-                                      color: Color(CustomColors.mainDark),
-                                    ),
-                                    SizedBox(width: 15),
-                                    Container(
-                                      height: 40,
-                                      width: 3,
-                                      color: Color(CustomColors.shadow),
-                                    ),
-                                    SizedBox(width: 20),
-                                    Text(
-                                      'Экспорт в json',
-                                      style: TextStyle(
-                                          fontSize: 25,
-                                          color: chosen_module == 2
-                                              ? Color(CustomColors.main)
-                                              : Color(CustomColors.darkAccent),
-                                          fontWeight: FontWeight.w600),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
                       ],
                     ),
                   ),
@@ -254,7 +172,6 @@ class _ScreenState extends State<Screen> {
 
                   switch (chosen_module) {
                     1 => HistoryModule(centerW: centerW, h: h),
-                    2 => JsonModule(centerW: centerW, h: h),
                     _ => MainModule(centerW: centerW, h: h)
                   },
 

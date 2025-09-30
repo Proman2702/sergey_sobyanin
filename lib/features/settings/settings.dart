@@ -1,15 +1,10 @@
-import 'dart:developer';
 import 'dart:math' as math;
-
-import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/etc/colors/gradients/background.dart';
-import 'package:sergey_sobyanin/features/blocking_progress.dart';
 import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/features/settings/hint.dart';
-import 'package:sergey_sobyanin/repositories/database/database_service.dart';
+import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
 import 'package:sergey_sobyanin/repositories/server/accuracy.dart';
 import 'package:sergey_sobyanin/repositories/server/ip.dart';
 
@@ -23,10 +18,6 @@ class SettingsDialog extends StatefulWidget {
 }
 
 class _SettingsDialogState extends State<SettingsDialog> {
-  double targetWidth = 600;
-  double targetHeight = 380;
-  double inset = 24;
-
   String? accuracy;
   String? border;
   String? ip;
@@ -44,31 +35,24 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    // Размер "вьюпорта" диалога (максимум — экран минус inset)
-    final frameW = (size.width - inset * 2).clamp(0.0, double.infinity);
-    final frameH = (size.height - inset * 2).clamp(0.0, double.infinity);
+    final frameW = (size.width - 16 * 2).clamp(0.0, double.infinity);
+    final frameH = (size.height - 16 * 2).clamp(0.0, double.infinity);
 
-    // Собственно диалог
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.all(inset),
+      insetPadding: EdgeInsets.all(16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
-          // Диалог как окно просмотра: не больше экрана, не больше target
-          width: math.min(targetWidth, frameW),
-          height: math.min(targetHeight, frameH),
-
-          // 1) Вертикальный скролл (его ребёнку задаём фиксированную высоту!)
+          width: math.min(600, frameW),
+          height: math.min(380, frameH),
           child: SingleChildScrollView(
             child: SizedBox(
-              height: targetHeight, // фикс! вместо SizedBox.expand
+              height: 380,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
-                  width: targetWidth, // фикс!
-
-                  // Ваш «контент» фикс. размера с градиентом
+                  width: 600,
                   child: Container(
                     decoration: BoxDecoration(gradient: BackgroundGrad()),
                     child: Column(
@@ -212,16 +196,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           ),
                         ),
                         SizedBox(height: 40),
-                        Material(
-                          elevation: 5,
-                          borderRadius: BorderRadius.circular(15),
-
-                          color: Colors.transparent, // нужен Material-предок для волны
-                          child: InkWell(
+                        CustomButton(
                             onTap: () {
                               try {
                                 IP().setIp(ip!);
-
                                 if ((0 < int.parse(accuracy!) && int.parse(accuracy!) < 100) &&
                                     (0 < int.parse(border!) && int.parse(border!) < 100)) {
                                   Accuracy().setAcc(int.parse(accuracy!));
@@ -229,29 +207,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 } else {
                                   throw ArgumentError('Значения не в диапазоне от 0 до 100');
                                 }
-
                                 Navigator.pop(context);
                               } catch (e) {
                                 ErrorNotifier.show(e.toString());
                               }
                             },
-                            borderRadius: BorderRadius.circular(15),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                color: Color(CustomColors.accent),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Container(
-                                  width: 200,
-                                  height: 45,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    'Сохранить',
-                                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w500),
-                                  )),
-                            ),
-                          ),
-                        )
+                            text: 'Сохранить',
+                            width: 200,
+                            height: 45,
+                            color: Color(CustomColors.accent))
                       ],
                     ),
                   ),

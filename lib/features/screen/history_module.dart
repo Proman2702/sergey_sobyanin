@@ -1,7 +1,4 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:sergey_sobyanin/etc/colors/colors.dart';
 
 class HistoryModule extends StatelessWidget {
   const HistoryModule({

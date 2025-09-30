@@ -6,6 +6,7 @@ import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/features/blocking_progress.dart';
 import 'package:sergey_sobyanin/features/dialogs/get_instruments.dart';
 import 'package:sergey_sobyanin/features/dialogs/hand_over_instruments.dart';
+import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 
@@ -32,23 +33,18 @@ class _MainModuleState extends State<MainModule> {
     final snap = await ref.get();
 
     if (!snap.exists) {
-      // создаём нового пользователя
       final user = CustomUser(
         pictureData: '',
         session: 0,
         result: <String, dynamic>{},
         id: id,
-        // здесь добавь дефолтные значения для остальных обязательных полей
       );
       await ref.set(user.toJson());
       return user;
     }
 
-    // документ есть → парсим
-    final map = (snap.data() as Map<String, dynamic>?) ?? <String, dynamic>{};
-
-    map.putIfAbsent('id', () => id); // чтобы id точно был в модели
-
+    final map = (snap.data()) ?? {};
+    map.putIfAbsent('id', () => id);
     return CustomUser.fromJson(map);
   }
 
@@ -91,13 +87,8 @@ class _MainModuleState extends State<MainModule> {
                 ),
               )),
           Padding(
-            padding: const EdgeInsets.only(left: 500, top: 5),
-            child: Material(
-              elevation: 5,
-              borderRadius: BorderRadius.circular(15),
-
-              color: Colors.transparent, // нужен Material-предок для волны
-              child: InkWell(
+              padding: const EdgeInsets.only(left: 500, top: 5),
+              child: CustomButton(
                 onTap: id != ''
                     ? () async {
                         final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
@@ -119,24 +110,12 @@ class _MainModuleState extends State<MainModule> {
                                     ));
                       }
                     : () {},
-                borderRadius: BorderRadius.circular(15),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    color: Color(CustomColors.accent),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Container(
-                      width: 200,
-                      height: 60,
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Готово',
-                        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w500),
-                      )),
-                ),
-              ),
-            ),
-          )
+                text: 'Готово',
+                width: 200,
+                height: 50,
+                color: Color(CustomColors.accent),
+                fontSize: 27,
+              ))
         ],
       ),
     );

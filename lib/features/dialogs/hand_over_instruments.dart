@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:html' as html;
+import 'package:sergey_sobyanin/etc/constants.dart';
 
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
@@ -12,40 +13,12 @@ import 'package:sergey_sobyanin/features/blocking_progress.dart';
 import 'package:sergey_sobyanin/features/dialogs/compare_pics.dart';
 import 'package:sergey_sobyanin/features/dialogs/redactor.dart';
 import 'package:sergey_sobyanin/features/error_screen.dart';
+import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 import 'package:sergey_sobyanin/repositories/database/models/user.dart';
-import 'package:sergey_sobyanin/repositories/image/image_service.dart';
 import 'package:sergey_sobyanin/repositories/server/accuracy.dart';
 import 'package:sergey_sobyanin/repositories/server/ip.dart';
 import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
-
-const Map<String, String> INSTRUMENTS = {
-  'screwdriver -': 'Отвертка "-"',
-  'screwdriver +': 'Отвертка "+"',
-  'screwdriver x': 'Отвертка на смещенный крест',
-  'kolovorot': 'Коловорот',
-  'passatizi kontro': 'Пассатижи контровочные',
-  'passatizi': 'Пассатижи',
-  'shernitsa': 'Шэрница',
-  'razvodnoy kluch': 'Разводной ключ',
-  'otkruvashka': 'Открывашка для банок с маслом',
-  'kluch rozkov': 'Ключ рожковый/накидной ¾',
-  'bokorezu': 'Бокорезы',
-};
-
-const Map<int, String> INSTRUMENTS_INDEXED = {
-  0: 'screwdriver -',
-  1: 'screwdriver +',
-  2: 'screwdriver x',
-  3: 'kolovorot',
-  4: 'passatizi kontro',
-  5: 'passatizi',
-  6: 'shernitsa',
-  7: 'razvodnoy kluch',
-  8: 'otkruvashka',
-  9: 'kluch rozkov',
-  10: 'bokorezu'
-};
 
 class HandOverInstrumentsDialog extends StatefulWidget {
   const HandOverInstrumentsDialog({super.key, required this.user});
@@ -56,15 +29,11 @@ class HandOverInstrumentsDialog extends StatefulWidget {
 }
 
 class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
-  double targetWidth = 1400;
-  double targetHeight = 800;
-  double inset = 24;
-
   final database = DatabaseService();
 
   PlatformFile? imageFile;
   Uint8List? bytes;
-  Uint8List? bytes_from_server;
+  Uint8List? bytesFromServer;
   bool sendingToServer = false;
   Map<String, dynamic>? data;
   Map<String, dynamic> result = {};
@@ -78,13 +47,11 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
 
   List<Map<String, dynamic>> convertToJsonList(Map<String, dynamic> input) {
     final List<Map<String, dynamic>> result = [];
-
     input.forEach((name, confList) {
-      // ищем id по имени в INSTRUMENTS_INDEXED
       final entry =
           INSTRUMENTS_INDEXED.entries.firstWhere((e) => e.value == name, orElse: () => const MapEntry(-1, ''));
 
-      if (entry.key == -1) return; // если имя не найдено — пропускаем
+      if (entry.key == -1) return;
 
       for (final conf in confList) {
         result.add({
@@ -101,7 +68,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
   void downloadJson(String filename, Map<String, dynamic> data) {
     final jsonList = convertToJsonList(data);
 
-    final encoder = const JsonEncoder.withIndent('  '); // pretty JSON
+    final encoder = const JsonEncoder.withIndent('  ');
     final jsonStr = encoder.convert(jsonList);
 
     final bytes = utf8.encode(jsonStr);
@@ -121,8 +88,8 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
   Future<void> pickOneImage() async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
-      withData: true, // важно для Web — нужны bytes
-      type: FileType.image, // только картинки
+      withData: true,
+      type: FileType.image,
     );
     if (result == null) return;
     setState(() => imageFile = result.files.single);
@@ -151,20 +118,17 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
       data = await UploadImage().uploadImage(bytes!, imageFile!.name, '${IP().getIp}/upload', note: Accuracy().getAcc)
           as Map<String, dynamic>;
 
-      bytes_from_server = base64Decode(data!['img']);
+      bytesFromServer = base64Decode(data!['img']);
       result = {};
       for (final item in data!["predictions"]) {
         final name = item["class_name"] as String;
         final conf = (item["confidence"] as num).toDouble();
         final rounded = double.parse(conf.toStringAsFixed(2));
-
-        // если ключа ещё нет → создаём список
         result.putIfAbsent(name, () => []);
-        // добавляем в список
         result[name]!.add(rounded);
       }
 
-      if (!result.isEmpty) {
+      if (result.isNotEmpty) {
         if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
           allowRedacting = true;
         } else {
@@ -178,345 +142,276 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
-    // Размер "вьюпорта" диалога (максимум — экран минус inset)
-    final frameW = (size.width - inset * 2).clamp(0.0, double.infinity);
-    final frameH = (size.height - inset * 2).clamp(0.0, double.infinity);
-
-    // Собственно диалог
+    final frameW = (size.width - 16 * 2).clamp(0.0, double.infinity);
+    final frameH = (size.height - 16 * 2).clamp(0.0, double.infinity);
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.all(inset),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          // Диалог как окно просмотра: не больше экрана, не больше target
-          width: math.min(targetWidth, frameW),
-          height: math.min(targetHeight, frameH),
-
-          // 1) Вертикальный скролл (его ребёнку задаём фиксированную высоту!)
-          child: SingleChildScrollView(
-            child: SizedBox(
-              height: targetHeight, // фикс! вместо SizedBox.expand
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: targetWidth, // фикс!
-
-                  // Ваш «контент» фикс. размера с градиентом
-                  child: Container(
-                    decoration: BoxDecoration(gradient: BackgroundGrad()),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 700,
-                          height: 800,
-                          alignment: Alignment.center,
-                          decoration:
-                              BoxDecoration(borderRadius: BorderRadius.circular(16), color: Color(CustomColors.shadow)),
-                          child: bytes == null
-                              ? GestureDetector(
-                                  onTap: setImageWithSendingToServer,
-                                  child: Container(
-                                      width: 300,
-                                      height: 300,
-                                      alignment: Alignment.center,
-                                      child: Column(
+      insetPadding: EdgeInsets.all(16),
+      child: Container(
+        width: math.min(1400, frameW),
+        height: math.min(800, frameH),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), gradient: BackgroundGrad()),
+        child: SingleChildScrollView(
+          child: SizedBox(
+            height: 800,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: 1400,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 700,
+                      height: 800,
+                      alignment: Alignment.center,
+                      decoration:
+                          BoxDecoration(borderRadius: BorderRadius.circular(16), color: Color(CustomColors.shadow)),
+                      child: bytes == null
+                          ? GestureDetector(
+                              onTap: setImageWithSendingToServer,
+                              child: Container(
+                                  width: 300,
+                                  height: 300,
+                                  alignment: Alignment.center,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    spacing: 10,
+                                    children: [
+                                      Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         spacing: 10,
                                         children: [
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            spacing: 10,
+                                          Icon(Icons.photo_size_select_actual_outlined,
+                                              color: Colors.black54, size: 60),
+                                          Icon(Icons.add, color: Colors.black54, size: 60),
+                                        ],
+                                      ),
+                                      Text(
+                                        'Нажмите, чтобы добавить фото',
+                                        style:
+                                            TextStyle(color: Colors.black54, fontWeight: FontWeight.w500, fontSize: 22),
+                                        textAlign: TextAlign.center,
+                                      )
+                                    ],
+                                  )),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 700, maxHeight: 700),
+                                  child: Container(
+                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+                                    child: InteractiveViewer(
+                                        child: Image.memory(
+                                            Uint8List.fromList(
+                                                !showBoxes ? bytes! : bytesFromServer ?? bytes as List<int>),
+                                            fit: BoxFit.contain)),
+                                  ),
+                                ),
+                                SizedBox(height: 15),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    FloatingActionButton(
+                                      backgroundColor: Color(CustomColors.accent),
+                                      onPressed: setImageWithSendingToServer,
+                                      child: Icon(
+                                        Icons.refresh,
+                                        color: Color(CustomColors.main),
+                                        size: 40,
+                                      ),
+                                    ),
+                                    SizedBox(width: 20),
+                                    FloatingActionButton(
+                                      backgroundColor: Color(CustomColors.accent),
+                                      onPressed: () {
+                                        showBoxes = !showBoxes;
+                                        setState(() {});
+                                      },
+                                      child: Icon(
+                                        Icons.check_box_outlined,
+                                        color: Color(CustomColors.main),
+                                        size: 40,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                    ),
+                    Container(
+                      width: 700,
+                      height: 800,
+                      alignment: Alignment.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(height: 20),
+                          SizedBox(
+                            height: 160,
+                            width: 600,
+                            child: Text(
+                              'Список отданных инструментов',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 50),
+                            ),
+                          ),
+                          SizedBox(height: 30),
+                          Container(
+                              width: 600,
+                              height: 450,
+                              alignment: Alignment.topCenter,
+                              child: result.isEmpty
+                                  ? ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
+                                      child: CircularProgressIndicator())
+                                  : GridView.count(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 3.5,
+                                      shrinkWrap: true,
+                                      children: parseToDisplay(result).map((entry) {
+                                        final name = INSTRUMENTS[entry.key];
+                                        final count = entry.value.length;
+
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(15),
+                                            color: Colors.white,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Icon(Icons.photo_size_select_actual_outlined,
-                                                  color: Colors.black54, size: 60),
-                                              Icon(Icons.add, color: Colors.black54, size: 60),
+                                              Expanded(
+                                                child: Text(
+                                                  name!,
+                                                  style: const TextStyle(
+                                                      fontSize: 22, fontWeight: FontWeight.w500, height: 1.2),
+                                                  softWrap: true,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Color(CustomColors.darkAccent),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Text(
+                                                  "$count шт.",
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                          Text(
-                                            'Нажмите, чтобы добавить фото',
-                                            style: TextStyle(
-                                                color: Colors.black54, fontWeight: FontWeight.w500, fontSize: 22),
-                                            textAlign: TextAlign.center,
-                                          )
-                                        ],
-                                      )),
-                                )
-                              : Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ConstrainedBox(
-                                      constraints: BoxConstraints(maxWidth: 700, maxHeight: 700),
-                                      child: Container(
-                                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
-                                        child: InteractiveViewer(
-                                            child: Image.memory(
-                                                Uint8List.fromList(
-                                                    !showBoxes ? bytes! : bytes_from_server ?? bytes as List<int>),
-                                                fit: BoxFit.contain)),
-                                      ),
-                                    ),
-                                    SizedBox(height: 15),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                        );
+                                      }).toList(),
+                                    )),
+                          SizedBox(height: 40),
+                          SizedBox(
+                            width: 600,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CustomButtonModified(
+                                    onTap: () async {
+                                      downloadJson('exported_hand_over.json', result);
+                                    },
+                                    width: 80,
+                                    height: 50,
+                                    color: Color(CustomColors.accent),
+                                    child: Row(
                                       children: [
-                                        FloatingActionButton(
-                                          backgroundColor: Color(CustomColors.accent),
-                                          onPressed: setImageWithSendingToServer,
-                                          child: Icon(
-                                            Icons.refresh,
-                                            color: Color(CustomColors.main),
-                                            size: 40,
-                                          ),
+                                        SizedBox(width: 5),
+                                        Icon(
+                                          Icons.save_outlined,
+                                          color: Color(CustomColors.main),
+                                          size: 30,
                                         ),
-                                        SizedBox(width: 20),
-                                        FloatingActionButton(
-                                          backgroundColor: Color(CustomColors.accent),
-                                          onPressed: () {
-                                            showBoxes = !showBoxes;
-                                            setState(() {});
-                                          },
-                                          child: Icon(
-                                            Icons.check_box_outlined,
-                                            color: Color(CustomColors.main),
-                                            size: 40,
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 15.0),
+                                          child: Text(
+                                            'JSON',
+                                            style: TextStyle(
+                                                color: Color(CustomColors.main),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w800),
                                           ),
-                                        ),
+                                        )
                                       ],
-                                    )
-                                  ],
-                                ),
-                        ),
-                        Container(
-                          width: 700,
-                          height: 800,
-                          alignment: Alignment.center,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SizedBox(height: 20),
-                              SizedBox(
-                                height: 160,
-                                width: 600,
-                                child: Text(
-                                  'Список отданных инструментов',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 50),
-                                ),
-                              ),
-                              SizedBox(height: 30),
-                              Container(
-                                  width: 600,
-                                  height: 450,
-                                  alignment: Alignment.topCenter,
-                                  child: result.isEmpty
-                                      ? ConstrainedBox(
-                                          constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
-                                          child: CircularProgressIndicator())
-                                      : GridView.count(
-                                          crossAxisCount: 2, // две колонки
-                                          crossAxisSpacing: 16,
-                                          mainAxisSpacing: 12,
-                                          childAspectRatio: 3.5,
-
-                                          shrinkWrap: true,
-                                          children: parseToDisplay(result).map((entry) {
-                                            final name = INSTRUMENTS[entry.key];
-                                            final count = entry.value.length;
-
-                                            return Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(15),
-                                                color: Colors.white,
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      name!,
-                                                      style: const TextStyle(
-                                                          fontSize: 22, fontWeight: FontWeight.w500, height: 1.2),
-                                                      softWrap: true,
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                                    decoration: BoxDecoration(
-                                                      color: Color(CustomColors.darkAccent),
-                                                      borderRadius: BorderRadius.circular(12),
-                                                    ),
-                                                    child: Text(
-                                                      "$count шт.",
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight: FontWeight.w800,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }).toList(),
-                                        )),
-                              SizedBox(height: 40),
-                              SizedBox(
-                                width: 600,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Material(
-                                      elevation: 5,
-                                      borderRadius: BorderRadius.circular(15),
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: () async {
-                                          downloadJson('exported_hand_over.json', result);
-                                        },
-                                        borderRadius: BorderRadius.circular(15),
-                                        child: Ink(
-                                          decoration: BoxDecoration(
-                                            color: Color(CustomColors.accent),
-                                            borderRadius: BorderRadius.circular(15),
-                                          ),
-                                          child: Container(
-                                              width: 80,
-                                              height: 50,
-                                              alignment: Alignment.center,
-                                              padding: EdgeInsets.only(left: 8),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.save_outlined,
-                                                    color: Color(CustomColors.main),
-                                                    size: 30,
-                                                  ),
-                                                  Padding(
-                                                    padding: const EdgeInsets.only(bottom: 15.0),
-                                                    child: Text(
-                                                      'JSON',
-                                                      style: TextStyle(
-                                                          color: Color(CustomColors.main),
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.w800),
-                                                    ),
-                                                  )
-                                                ],
-                                              )),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 30),
-                                    Material(
-                                      elevation: 5,
-                                      borderRadius: BorderRadius.circular(15),
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: allowRedacting
-                                            ? () {
-                                                if (imageFile == null) {
-                                                  ErrorNotifier.show('Картинка не загружена!');
-                                                } else if (result.isEmpty) {
-                                                  ErrorNotifier.show('Инструменты еще не определены или их нет!');
-                                                } else {
-                                                  showDialog(
-                                                      context: context,
-                                                      builder: (context) => RedactorDialog(
-                                                          picture: bytes!,
-                                                          result: result,
-                                                          updateCallback: updateCallback));
-                                                  setState(() {});
-                                                }
-                                              }
-                                            : () {
-                                                ErrorNotifier.show('Редактирование недоступно');
-                                              },
-                                        borderRadius: BorderRadius.circular(15),
-                                        child: Ink(
-                                          decoration: BoxDecoration(
-                                            color: Color(CustomColors.accent),
-                                            borderRadius: BorderRadius.circular(15),
-                                          ),
-                                          child: Container(
-                                              width: 220,
-                                              height: 50,
-                                              alignment: Alignment.center,
-                                              child: Text(
-                                                'Редактировать',
-                                                style: TextStyle(
-                                                    fontSize: 25,
-                                                    color: Color(CustomColors.main),
-                                                    fontWeight: FontWeight.w600),
-                                              )),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 30),
-                                    Material(
-                                      elevation: 5,
-                                      borderRadius: BorderRadius.circular(15),
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: () async {
+                                    )),
+                                SizedBox(width: 30),
+                                CustomButton(
+                                  onTap: allowRedacting
+                                      ? () {
                                           if (imageFile == null) {
                                             ErrorNotifier.show('Картинка не загружена!');
                                           } else if (result.isEmpty) {
                                             ErrorNotifier.show('Инструменты еще не определены или их нет!');
                                           } else {
-                                            final close = showBlockingProgress(context, message: 'Сохраняем…');
-
-                                            await Future.delayed(Duration(milliseconds: 200));
-
-                                            final firstPic = base64Decode(widget.user.pictureData);
-                                            final secondPic = bytes!;
-
-                                            close();
-
-                                            Navigator.pop(context);
-
                                             showDialog(
                                                 context: context,
-                                                builder: (context) => ComparePicsDialog(
-                                                      id: widget.user.id,
-                                                      pic1: firstPic,
-                                                      pic2: secondPic,
-                                                      result1: widget.user.result,
-                                                      result2: result,
-                                                    ));
+                                                builder: (context) => RedactorDialog(
+                                                    picture: bytes!, result: result, updateCallback: updateCallback));
+                                            setState(() {});
                                           }
+                                        }
+                                      : () {
+                                          ErrorNotifier.show('Редактирование недоступно');
                                         },
-                                        borderRadius: BorderRadius.circular(15),
-                                        child: Ink(
-                                          decoration: BoxDecoration(
-                                            color: Color(CustomColors.accent),
-                                            borderRadius: BorderRadius.circular(15),
-                                          ),
-                                          child: Container(
-                                              width: 220,
-                                              height: 50,
-                                              alignment: Alignment.center,
-                                              child: Text(
-                                                'Сохранить',
-                                                style: TextStyle(
-                                                    fontSize: 25,
-                                                    color: Color(CustomColors.main),
-                                                    fontWeight: FontWeight.w600),
-                                              )),
-                                        ),
-                                      ),
-                                    )
-                                  ],
+                                  text: 'Редактировать',
+                                  width: 220,
+                                  height: 50,
+                                  color: allowRedacting ? Color(CustomColors.accent) : Color(CustomColors.shadow),
+                                  fontSize: 25,
                                 ),
-                              )
-                            ],
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
+                                SizedBox(width: 30),
+                                CustomButton(
+                                    onTap: () async {
+                                      if (imageFile == null) {
+                                        ErrorNotifier.show('Картинка не загружена!');
+                                      } else if (result.isEmpty) {
+                                        ErrorNotifier.show('Инструменты еще не определены или их нет!');
+                                      } else {
+                                        final close = showBlockingProgress(context, message: 'Сохраняем…');
+
+                                        await Future.delayed(Duration(milliseconds: 200));
+
+                                        final firstPic = base64Decode(widget.user.pictureData);
+                                        final secondPic = bytes!;
+
+                                        close();
+
+                                        Navigator.pop(context);
+
+                                        showDialog(
+                                            context: context,
+                                            builder: (context) => ComparePicsDialog(
+                                                  id: widget.user.id,
+                                                  pic1: firstPic,
+                                                  pic2: secondPic,
+                                                  result1: widget.user.result,
+                                                  result2: result,
+                                                ));
+                                      }
+                                    },
+                                    text: 'Сохранить',
+                                    width: 220,
+                                    height: 50,
+                                    color: Color(CustomColors.accent))
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
+                    )
+                  ],
                 ),
               ),
             ),

@@ -11,8 +11,6 @@ class DatabaseService {
     _sessionsRef = _firestore.collection(collectionPath).withConverter<CustomUser>(
           fromFirestore: (snap, _) {
             final data = snap.data() ?? <String, dynamic>{};
-            // если твой CustomUser.fromJson сам умеет работать с отсутствующими полями — ок
-            // подстрахуемся, что id всегда попадёт в модель
             return CustomUser.fromJson({
               ...data,
               'id': snap.id,
@@ -22,18 +20,15 @@ class DatabaseService {
         );
   }
 
-  /// Получить список всех пользователей (разово).
   Future<List<CustomUser>> getUsers() async {
     final qs = await _sessionsRef.get();
     return qs.docs.map((d) => d.data()).toList();
   }
 
-  /// Создать или обновить пользователя (upsert).
   Future<void> upsertUser(CustomUser user) async {
     await _sessionsRef.doc(user.id).set(user, SetOptions(merge: true));
   }
 
-  /// Удалить пользователя по id.
   Future<void> deleteUser(String id) async {
     await _sessionsRef.doc(id).delete();
   }
