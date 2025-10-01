@@ -142,7 +142,6 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     final frameW = (size.width - 16 * 2).clamp(0.0, double.infinity);
     final frameH = (size.height - 16 * 2).clamp(0.0, double.infinity);
 
-    // Собственно диалог
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),

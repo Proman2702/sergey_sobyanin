@@ -14,7 +14,7 @@ class UploadImage {
     Uint8List file,
     String? name,
     String url, {
-    int? note, // <-- текстовое поле
+    int? note,
   }) async {
     try {
       final BaseOptions options = BaseOptions(
@@ -27,13 +27,12 @@ class UploadImage {
 
       final dio = Dio(options);
 
-      // Сборка формы: файл + текст
       final formData = FormData.fromMap({
         "image": MultipartFile.fromBytes(
           file,
           filename: name ?? '${getRandomString(16)}.jpg',
         ),
-        "note": note ?? 0, // <-- добавили текст
+        "note": note ?? 0,
       });
 
       log("<upload> после формирования даты");
@@ -45,7 +44,7 @@ class UploadImage {
 
       if (response.statusCode == 200) {
         log('<upload> Картинка + текст успешно загружены');
-        log("<upload> ${response.data}");
+        //log("<upload> ${response.data}");
         return response.data;
       } else {
         log('<upload> Ошибка при загрузке: ${response.statusCode} ${response.statusMessage}');
