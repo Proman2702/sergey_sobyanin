@@ -75,33 +75,43 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               ),
                               Spacer(),
                               Container(
-                                  width: 280,
-                                  height: 40,
-                                  alignment: Alignment.centerLeft,
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(15),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            offset: Offset(0, 4), blurRadius: 4, spreadRadius: 0, color: Colors.black26)
-                                      ]),
-                                  child: TextField(
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black87),
-                                    maxLength: 20,
-                                    onChanged: (value) => setState(() {
-                                      ip = value;
-                                    }),
-                                    decoration: InputDecoration(
-                                      floatingLabelBehavior: FloatingLabelBehavior.never,
-                                      contentPadding: EdgeInsets.only(left: 10, bottom: 15),
-                                      counterText: "",
-                                      border: InputBorder.none,
-                                      labelText: ip ?? "",
-                                      labelStyle:
-                                          TextStyle(color: Colors.black87, fontSize: 22, fontWeight: FontWeight.w700),
+                                width: 280,
+                                height: 40,
+                                alignment: Alignment.centerLeft,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      offset: Offset(0, 4),
+                                      blurRadius: 4,
+                                      spreadRadius: 0,
+                                      color: Colors.black26,
+                                    )
+                                  ],
+                                ),
+                                child: TextField(
+                                  style:
+                                      const TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black87),
+                                  maxLength: 50,
+                                  onChanged: (value) => setState(() {
+                                    ip = value;
+                                  }),
+                                  scrollPhysics: const BouncingScrollPhysics(), // горизонтальная прокрутка
+                                  decoration: InputDecoration(
+                                    isCollapsed: true, // убирает белые полосы
+                                    contentPadding: const EdgeInsets.only(left: 10, bottom: 2),
+                                    counterText: "",
+                                    border: InputBorder.none,
+                                    hintText: ip ?? "", // вместо labelText
+                                    hintStyle: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
                                     ),
-                                  )),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
