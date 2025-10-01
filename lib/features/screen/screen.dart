@@ -56,16 +56,43 @@ class _ScreenState extends State<Screen> {
                   Container(
                     width: leftW,
                     height: h,
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), color: Colors.white, boxShadow: [
-                      BoxShadow(offset: Offset(0, 3), blurRadius: 10, spreadRadius: 4, color: Colors.black26)
-                    ]),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Color(CustomColors.main),
+                        boxShadow: [
+                          BoxShadow(offset: Offset(0, 3), blurRadius: 10, spreadRadius: 4, color: Colors.black26)
+                        ]),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(height: 20),
-                        Text('ТОиР | Аэрофлот',
-                            style: TextStyle(
-                                color: Color(CustomColors.bright), fontWeight: FontWeight.w800, fontSize: 36)),
+                        Stack(
+                          children: [
+                            // "тень"/обводка
+                            Text(
+                              "Аэрофлот ТОиР",
+                              style: TextStyle(
+                                letterSpacing: 2,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                foreground: Paint()
+                                  ..style = PaintingStyle.stroke
+                                  ..strokeWidth = 2
+                                  ..color = Color(CustomColors.bright), // цвет обводки
+                              ),
+                            ),
+                            // основной текст
+                            const Text(
+                              "Аэрофлот ТОиР",
+                              style: TextStyle(
+                                letterSpacing: 2,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                color: Color(CustomColors.bright), // цвет заливки
+                              ),
+                            ),
+                          ],
+                        ),
                         SizedBox(height: 20),
                         Container(
                           height: 140,
@@ -165,6 +192,36 @@ class _ScreenState extends State<Screen> {
                             ],
                           ),
                         ),
+                        SizedBox(
+                          height: h - 401,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    gradient: TileGrad2(),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: 30,
+                                bottom: 30,
+                                child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
+                              ),
+                              Positioned(
+                                right: 110,
+                                bottom: 50,
+                                child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
+                              ),
+                              Positioned(
+                                right: 50,
+                                bottom: 110,
+                                child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        )
                       ],
                     ),
                   ),
