@@ -127,6 +127,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
       if (!result.isEmpty) {
         if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
           allowRedacting = true;
+          ErrorNotifier.show('Доступно редактирование');
         } else {
           allowRedacting = false;
         }

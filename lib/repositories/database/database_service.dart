@@ -91,7 +91,7 @@ class HistoryDatabaseService implements DatabaseService<HistoryTile> {
 
   @override
   Future<void> upsertElement(HistoryTile tile) async {
-    await _sessionsRef.doc(tile.id).set(tile, SetOptions(merge: true));
+    await _sessionsRef.add(tile);
   }
 
   @override

@@ -5,6 +5,7 @@ import 'package:sergey_sobyanin/etc/colors/colors.dart';
 import 'package:sergey_sobyanin/features/blocking_progress.dart';
 import 'package:sergey_sobyanin/features/dialogs/get_instruments.dart';
 import 'package:sergey_sobyanin/features/dialogs/hand_over_instruments.dart';
+import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
 
@@ -87,7 +88,9 @@ class _MainModuleState extends State<MainModule> {
                                       user: user,
                                     ));
                       }
-                    : () {},
+                    : () {
+                        ErrorNotifier.show('Введите ID');
+                      },
                 text: 'Готово',
                 width: 200,
                 height: 50,

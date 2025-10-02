@@ -405,6 +405,7 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
 
                             await historyDatabase.upsertElement(HistoryTile(
                                 id: widget.id,
+                                personId: widget.id,
                                 time: time,
                                 result: boolResult.toString(),
                                 missing: boolResult ? {} : missingItems(widget.result1, widget.result2)));

@@ -131,6 +131,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
       if (result.isNotEmpty) {
         if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
           allowRedacting = true;
+          ErrorNotifier.show('Доступно редактирование');
         } else {
           allowRedacting = false;
         }
@@ -404,7 +405,8 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                     text: 'Сохранить',
                                     width: 220,
                                     height: 50,
-                                    color: Color(CustomColors.accent))
+                                    color: Color(CustomColors.accent),
+                                    fontSize: 25)
                               ],
                             ),
                           )

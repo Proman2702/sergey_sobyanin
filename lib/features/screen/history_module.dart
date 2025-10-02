@@ -21,7 +21,7 @@ class HistoryModule extends StatefulWidget {
 
 class _HistoryModuleState extends State<HistoryModule> {
   List<HistoryTile> filterByID(List<HistoryTile> list) {
-    return list.where((e) => e.id.startsWith(filter)).toList();
+    return list.where((e) => e.personId.startsWith(filter)).toList();
   }
 
   List<HistoryTile> filterByDate(List<HistoryTile> list) {
@@ -143,7 +143,8 @@ class _HistoryModuleState extends State<HistoryModule> {
                   }
 
                   List<HistoryTile> elements = snapshot.data ?? [];
-                  elements = filterByID(elements).reversed.toList();
+                  elements.sort((a, b) => DateTime.parse(b.time).compareTo(DateTime.parse(a.time)));
+                  elements = filterByID(elements);
                   elements = filterByDate(elements);
 
                   return ListView.builder(
@@ -156,7 +157,7 @@ class _HistoryModuleState extends State<HistoryModule> {
                             width: widget.centerW,
                             height: 90,
                             alignment: Alignment.center,
-                            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                            padding: EdgeInsets.only(left: 15, right: 15, top: 8, bottom: 2),
                             decoration: BoxDecoration(
                                 color: Color(CustomColors.main),
                                 borderRadius: BorderRadius.circular(15),
@@ -177,10 +178,18 @@ class _HistoryModuleState extends State<HistoryModule> {
                                             fontSize: 20,
                                             fontWeight: FontWeight.w700),
                                       ),
-                                      SizedBox(height: 10),
-                                      Text(
-                                        element.id,
-                                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                                      SizedBox(height: 3),
+                                      Container(
+                                        height: 45,
+                                        width: 180,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          softWrap: true,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          element.personId,
+                                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.1),
+                                        ),
                                       )
                                     ],
                                   ),
@@ -204,7 +213,7 @@ class _HistoryModuleState extends State<HistoryModule> {
                                             fontSize: 20,
                                             fontWeight: FontWeight.w700),
                                       ),
-                                      SizedBox(height: 10),
+                                      SizedBox(height: 5),
                                       element.result == 'false'
                                           ? Row(
                                               children: [
@@ -212,7 +221,11 @@ class _HistoryModuleState extends State<HistoryModule> {
                                                   "Сдано с потерей: ",
                                                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                                                 ),
-                                                HintIcon(element.missing.keys.map((e) => INSTRUMENTS[e]).join("\n"))
+                                                HintIcon(
+                                                  element.missing.entries
+                                                      .map((e) => '${INSTRUMENTS[e.key]} - ${e.value} шт.')
+                                                      .join('\n'),
+                                                )
                                               ],
                                             )
                                           : Row(
