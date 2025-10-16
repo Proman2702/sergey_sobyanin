@@ -53,7 +53,6 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   void initState() {
     super.initState();
     result = widget.result;
-    debugPrint(result.toString());
     allowRedacting = widget.allowRedacting;
     bytesFromServer = widget.bytesFromServer;
   }

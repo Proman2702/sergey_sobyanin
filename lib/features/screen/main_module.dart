@@ -92,7 +92,6 @@ class _MainModuleState extends State<MainModule> {
   Future<void> sendToServer() async {
     data = await UploadImage().uploadImage(_photoBytes!, 'burda.jpg', '${IP().getIp}/upload', note: Accuracy().getAcc)
         as Map<String, dynamic>;
-    debugPrint(data.toString());
 
     bytesFromServer = base64Decode(data!['img']);
     result = {};
@@ -165,8 +164,6 @@ class _MainModuleState extends State<MainModule> {
                         await _captureFrame();
 
                         await sendToServer();
-
-                        debugPrint(result.toString());
 
                         close();
 
