@@ -21,7 +21,18 @@ import 'package:sergey_sobyanin/repositories/server/ip.dart';
 import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
 
 class GetInstrumentsDialog extends StatefulWidget {
-  const GetInstrumentsDialog({super.key, required this.user});
+  const GetInstrumentsDialog(
+      {super.key,
+      required this.user,
+      required this.bytes,
+      required this.allowRedacting,
+      required this.bytesFromServer,
+      required this.result});
+  final Uint8List? bytes;
+
+  final bool allowRedacting;
+  final Map<String, dynamic> result;
+  final Uint8List? bytesFromServer;
 
   final CustomUser user;
   @override
@@ -31,7 +42,6 @@ class GetInstrumentsDialog extends StatefulWidget {
 class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   final database = UserDatabaseService();
   PlatformFile? imageFile;
-  Uint8List? bytes;
   Uint8List? bytesFromServer;
   bool sendingToServer = false;
   Map<String, dynamic>? data;
@@ -39,14 +49,13 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   bool showBoxes = false;
   bool allowRedacting = false;
 
-  Future<void> pickOneImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: false,
-      withData: true,
-      type: FileType.image,
-    );
-    if (result == null) return;
-    setState(() => imageFile = result.files.single);
+  @override
+  void initState() {
+    super.initState();
+    result = widget.result;
+    debugPrint(result.toString());
+    allowRedacting = widget.allowRedacting;
+    bytesFromServer = widget.bytesFromServer;
   }
 
   void updateCallback(Map<String, dynamic> newResult) {
@@ -95,46 +104,36 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     html.Url.revokeObjectUrl(url);
   }
 
-  void setImage() async {
-    await pickOneImage();
-    if (imageFile != null) {
-      log(imageFile!.name);
-      bytes = imageFile?.bytes;
-      setState(() {});
-    }
-  }
-
   // открыть картинку и отправить ее на сервер
-  void setImageWithSendingToServer() async {
-    await pickOneImage();
-    if (imageFile != null) {
-      log(imageFile!.name);
-      bytes = imageFile?.bytes;
-      data = await UploadImage().uploadImage(bytes!, imageFile!.name, '${IP().getIp}/upload', note: Accuracy().getAcc)
-          as Map<String, dynamic>;
+  // void setImageWithSendingToServer() async {
+  //   if (imageFile != null) {
+  //     log(imageFile!.name);
+  //     bytes = imageFile?.bytes;
+  //     data = await UploadImage().uploadImage(bytes!, imageFile!.name, '${IP().getIp}/upload', note: Accuracy().getAcc)
+  //         as Map<String, dynamic>;
 
-      bytesFromServer = base64Decode(data!['img']);
-      result = {};
-      for (final item in data!["predictions"]) {
-        final name = item["class_name"] as String;
-        final conf = (item["confidence"] as num).toDouble();
-        final rounded = double.parse(conf.toStringAsFixed(2));
+  //     bytesFromServer = base64Decode(data!['img']);
+  //     result = {};
+  //     for (final item in data!["predictions"]) {
+  //       final name = item["class_name"] as String;
+  //       final conf = (item["confidence"] as num).toDouble();
+  //       final rounded = double.parse(conf.toStringAsFixed(2));
 
-        result.putIfAbsent(name, () => []);
-        result[name]!.add(rounded);
-      }
+  //       result.putIfAbsent(name, () => []);
+  //       result[name]!.add(rounded);
+  //     }
 
-      if (!result.isEmpty) {
-        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
-          allowRedacting = true;
-          ErrorNotifier.show('Доступно редактирование');
-        } else {
-          allowRedacting = false;
-        }
-      }
-      setState(() {});
-    }
-  }
+  //     if (!result.isEmpty) {
+  //       if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
+  //         allowRedacting = true;
+  //         ErrorNotifier.show('Доступно редактирование');
+  //       } else {
+  //         allowRedacting = false;
+  //       }
+  //     }
+  //     setState(() {});
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -165,79 +164,54 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                       alignment: Alignment.center,
                       decoration:
                           BoxDecoration(borderRadius: BorderRadius.circular(16), color: Color(CustomColors.shadow)),
-                      child: bytes == null
-                          ? GestureDetector(
-                              onTap: setImageWithSendingToServer,
-                              child: Container(
-                                  width: 300,
-                                  height: 300,
-                                  alignment: Alignment.center,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    spacing: 10,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        spacing: 10,
-                                        children: [
-                                          Icon(Icons.photo_size_select_actual_outlined,
-                                              color: Colors.black54, size: 60),
-                                          Icon(Icons.add, color: Colors.black54, size: 60),
-                                        ],
-                                      ),
-                                      Text(
-                                        'Нажмите, чтобы добавить фото',
-                                        style:
-                                            TextStyle(color: Colors.black54, fontWeight: FontWeight.w500, fontSize: 22),
-                                        textAlign: TextAlign.center,
-                                      )
-                                    ],
-                                  )),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ConstrainedBox(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          widget.bytes != null
+                              ? ConstrainedBox(
                                   constraints: BoxConstraints(maxWidth: 700, maxHeight: 700),
                                   child: Container(
                                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+                                    clipBehavior: Clip.hardEdge,
                                     child: InteractiveViewer(
                                         child: Image.memory(
-                                            Uint8List.fromList(
-                                                !showBoxes ? bytes! : bytesFromServer ?? bytes as List<int>),
+                                            Uint8List.fromList(!showBoxes
+                                                ? widget.bytes!
+                                                : bytesFromServer ?? widget.bytes as List<int>),
                                             fit: BoxFit.contain)),
                                   ),
-                                ),
-                                SizedBox(height: 15),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    FloatingActionButton(
-                                      backgroundColor: Color(CustomColors.accent),
-                                      onPressed: setImageWithSendingToServer,
-                                      child: Icon(
-                                        Icons.refresh,
-                                        color: Color(CustomColors.main),
-                                        size: 40,
-                                      ),
-                                    ),
-                                    SizedBox(width: 20),
-                                    FloatingActionButton(
-                                      backgroundColor: Color(CustomColors.accent),
-                                      onPressed: () {
-                                        showBoxes = !showBoxes;
-                                        setState(() {});
-                                      },
-                                      child: Icon(
-                                        Icons.check_box_outlined,
-                                        color: Color(CustomColors.main),
-                                        size: 40,
-                                      ),
-                                    ),
-                                  ],
                                 )
-                              ],
-                            ),
+                              : Text('говно'),
+                          SizedBox(height: 15),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              FloatingActionButton(
+                                backgroundColor: Color(CustomColors.accent),
+                                onPressed: () {},
+                                child: Icon(
+                                  Icons.refresh,
+                                  color: Color(CustomColors.main),
+                                  size: 40,
+                                ),
+                              ),
+                              SizedBox(width: 20),
+                              FloatingActionButton(
+                                backgroundColor: Color(CustomColors.accent),
+                                onPressed: () {
+                                  showBoxes = !showBoxes;
+                                  setState(() {});
+                                },
+                                child: Icon(
+                                  Icons.check_box_outlined,
+                                  color: Color(CustomColors.main),
+                                  size: 40,
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
                     ),
                     Container(
                       width: 700,
@@ -359,7 +333,9 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                             showDialog(
                                                 context: context,
                                                 builder: (context) => RedactorDialog(
-                                                    picture: bytes!, result: result, updateCallback: updateCallback));
+                                                    picture: widget.bytes!,
+                                                    result: result,
+                                                    updateCallback: updateCallback));
                                             setState(() {});
                                           }
                                         }
@@ -384,7 +360,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
 
                                       await Future.delayed(Duration(milliseconds: 200));
 
-                                      final base64pic = await ImageService.compressToBase64(bytes!);
+                                      final base64pic = await ImageService.compressToBase64(widget.bytes!);
                                       log('задаунскейлили');
                                       await database.upsertElement(
                                           widget.user.copyWith(session: 1, pictureData: base64pic, result: result));
