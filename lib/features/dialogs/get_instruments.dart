@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:html' as html;
+import 'package:dotted_border/dotted_border.dart';
 import 'package:sergey_sobyanin/etc/constants.dart';
 
 import 'dart:typed_data';
@@ -158,62 +159,119 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                 child: Row(
                   children: [
                     Container(
-                      width: 700,
+                      width: 850,
                       height: 800,
                       alignment: Alignment.center,
-                      decoration:
-                          BoxDecoration(borderRadius: BorderRadius.circular(16), color: Color(CustomColors.shadow)),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Color(CustomColors.background),
+                        // border: Border.all(color: Color(CustomColors.mainDark), width: 5)
+                      ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          widget.bytes != null
-                              ? ConstrainedBox(
-                                  constraints: BoxConstraints(maxWidth: 700, maxHeight: 700),
-                                  child: Container(
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
-                                    clipBehavior: Clip.hardEdge,
-                                    child: InteractiveViewer(
-                                        child: Image.memory(
-                                            Uint8List.fromList(!showBoxes
-                                                ? widget.bytes!
-                                                : bytesFromServer ?? widget.bytes as List<int>),
-                                            fit: BoxFit.contain)),
+                          SizedBox(height: 30),
+                          Container(
+                            width: 790,
+                            height: 600,
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                color: Color(CustomColors.backgroundDark).withOpacity(0.1)),
+                            child: widget.bytes != null
+                                ? Center(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: 820, maxHeight: 600),
+                                      child: Container(
+                                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), boxShadow: [
+                                          BoxShadow(offset: Offset(0, 4), color: Colors.black38, blurRadius: 3)
+                                        ]),
+                                        clipBehavior: Clip.hardEdge,
+                                        child: InteractiveViewer(
+                                            child: Image.memory(
+                                                Uint8List.fromList(!showBoxes
+                                                    ? widget.bytes!
+                                                    : bytesFromServer ?? widget.bytes as List<int>),
+                                                fit: BoxFit.contain)),
+                                      ),
+                                    ),
+                                  )
+                                : Text('говно'),
+                          ),
+                          SizedBox(height: 30),
+                          Container(
+                            width: 790,
+                            height: 100,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                color: Color(CustomColors.backgroundDark).withOpacity(0.1)),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CustomButtonModified(
+                                  color: Color(CustomColors.bright),
+                                  onTap: () {
+                                    showBoxes = !showBoxes;
+                                    setState(() {});
+                                  },
+                                  width: 50,
+                                  height: 50,
+                                  child: Icon(
+                                    Icons.refresh,
+                                    color: Color(CustomColors.main),
+                                    size: 35,
                                   ),
-                                )
-                              : Text('говно'),
-                          SizedBox(height: 15),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              FloatingActionButton(
-                                backgroundColor: Color(CustomColors.accent),
-                                onPressed: () {},
-                                child: Icon(
-                                  Icons.refresh,
-                                  color: Color(CustomColors.main),
-                                  size: 40,
                                 ),
-                              ),
-                              SizedBox(width: 20),
-                              FloatingActionButton(
-                                backgroundColor: Color(CustomColors.accent),
-                                onPressed: () {
-                                  showBoxes = !showBoxes;
-                                  setState(() {});
-                                },
-                                child: Icon(
-                                  Icons.check_box_outlined,
-                                  color: Color(CustomColors.main),
-                                  size: 40,
+                                SizedBox(width: 20),
+                                CustomButtonModified(
+                                  color: Color(CustomColors.bright),
+                                  onTap: () {
+                                    showBoxes = !showBoxes;
+                                    setState(() {});
+                                  },
+                                  width: 50,
+                                  height: 50,
+                                  child: Icon(
+                                    Icons.check_box_outlined,
+                                    color: Color(CustomColors.main),
+                                    size: 35,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 20),
+                                CustomButton(
+                                  onTap: allowRedacting
+                                      ? () {
+                                          if (imageFile == null) {
+                                            ErrorNotifier.show('Картинка не загружена!');
+                                          } else if (result.isEmpty) {
+                                            ErrorNotifier.show('Инструменты еще не определены или их нет!');
+                                          } else {
+                                            showDialog(
+                                                context: context,
+                                                builder: (context) => RedactorDialog(
+                                                    picture: widget.bytes!,
+                                                    result: result,
+                                                    updateCallback: updateCallback));
+                                            setState(() {});
+                                          }
+                                        }
+                                      : () {
+                                          ErrorNotifier.show('Редактирование недоступно');
+                                        },
+                                  text: 'Редактировать',
+                                  width: 200,
+                                  height: 50,
+                                  color: allowRedacting ? Color(CustomColors.bright) : Color(CustomColors.shadow),
+                                  fontSize: 22,
+                                ),
+                              ],
+                            ),
                           )
                         ],
                       ),
                     ),
                     Container(
-                      width: 700,
+                      width: 550,
                       height: 800,
                       alignment: Alignment.center,
                       child: Column(
@@ -221,27 +279,31 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                         children: [
                           SizedBox(height: 20),
                           SizedBox(
-                            height: 160,
-                            width: 600,
+                            height: 140,
+                            width: 500,
                             child: Text(
                               'Список полученных инструментов',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 50),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 40),
                             ),
                           ),
-                          SizedBox(height: 30),
                           Container(
-                              width: 600,
-                              height: 450,
+                              width: 480,
+                              height: 520,
                               alignment: Alignment.topCenter,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: Color(CustomColors.mainLight).withOpacity(0.1)),
+                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                               child: result.isEmpty
                                   ? ConstrainedBox(
                                       constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
                                       child: CircularProgressIndicator())
                                   : GridView.count(
-                                      crossAxisCount: 2, // две колонки
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 12,
-                                      childAspectRatio: 3.5,
+                                      crossAxisCount: 1, // две колонки
+                                      crossAxisSpacing: 24,
+                                      mainAxisSpacing: 1,
+                                      childAspectRatio: 8,
 
                                       shrinkWrap: true,
                                       children: result.entries.toList().map((entry) {
@@ -249,10 +311,9 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                         final count = entry.value.length;
 
                                         return Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.circular(15),
-                                            color: Colors.white,
                                           ),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -261,7 +322,10 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                                 child: Text(
                                                   name!,
                                                   style: const TextStyle(
-                                                      fontSize: 22, fontWeight: FontWeight.w500, height: 1.2),
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.w600,
+                                                      height: 1.2,
+                                                      color: Colors.white),
                                                   softWrap: true,
                                                   maxLines: 2,
                                                   overflow: TextOverflow.ellipsis,
@@ -286,14 +350,14 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                         );
                                       }).toList(),
                                     )),
-                          SizedBox(height: 60),
+                          SizedBox(height: 40),
                           SizedBox(
-                            width: 600,
+                            width: 500,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 CustomButtonModified(
-                                  width: 80,
+                                  width: 90,
                                   height: 50,
                                   color: Color(CustomColors.accent),
                                   onTap: () async {
@@ -322,33 +386,6 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                 ),
                                 SizedBox(width: 30),
                                 CustomButton(
-                                  onTap: allowRedacting
-                                      ? () {
-                                          if (imageFile == null) {
-                                            ErrorNotifier.show('Картинка не загружена!');
-                                          } else if (result.isEmpty) {
-                                            ErrorNotifier.show('Инструменты еще не определены или их нет!');
-                                          } else {
-                                            showDialog(
-                                                context: context,
-                                                builder: (context) => RedactorDialog(
-                                                    picture: widget.bytes!,
-                                                    result: result,
-                                                    updateCallback: updateCallback));
-                                            setState(() {});
-                                          }
-                                        }
-                                      : () {
-                                          ErrorNotifier.show('Редактирование недоступно');
-                                        },
-                                  text: 'Редактировать',
-                                  width: 220,
-                                  height: 50,
-                                  color: allowRedacting ? Color(CustomColors.accent) : Color(CustomColors.shadow),
-                                  fontSize: 25,
-                                ),
-                                SizedBox(width: 30),
-                                CustomButton(
                                   onTap: () async {
                                     if (imageFile == null) {
                                       ErrorNotifier.show('Картинка не загружена!');
@@ -373,7 +410,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                   width: 220,
                                   height: 50,
                                   color: Color(CustomColors.accent),
-                                  fontSize: 25,
+                                  fontSize: 26,
                                 ),
                               ],
                             ),
