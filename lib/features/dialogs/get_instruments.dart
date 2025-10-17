@@ -49,6 +49,9 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   Map<String, dynamic> result = {};
   bool showBoxes = false;
   bool allowRedacting = false;
+  html.VideoElement? _video;
+  html.CanvasElement? _canvas;
+  Uint8List? _photoBytes;
 
   @override
   void initState() {
@@ -104,36 +107,75 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     html.Url.revokeObjectUrl(url);
   }
 
+  Future<void> _initCamera() async {
+    final video = html.VideoElement()
+      ..autoplay = true
+      ..muted = true
+      ..style.width = '100%'
+      ..style.height = '100%';
+
+    try {
+      final stream = await html.window.navigator.mediaDevices!.getUserMedia({
+        'video': {'facingMode': 'user'}, // 'environment' для задней камеры
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      setState(() {
+        _video = video;
+      });
+    } catch (e) {
+      debugPrint('Ошибка доступа к камере: $e');
+    }
+  }
+
+  Future<void> _captureFrame() async {
+    if (_video == null) return;
+
+    final width = _video!.videoWidth;
+    final height = _video!.videoHeight;
+
+    _canvas = html.CanvasElement(width: width, height: height);
+    final ctx = _canvas!.context2D;
+    ctx.drawImage(_video!, 0, 0);
+
+    final blob = await _canvas!.toBlob('image/png');
+    final reader = html.FileReader();
+    reader.readAsArrayBuffer(blob!);
+    await reader.onLoad.first;
+
+    setState(() {
+      _photoBytes = reader.result as Uint8List?;
+    });
+  }
+
   // открыть картинку и отправить ее на сервер
-  // void setImageWithSendingToServer() async {
-  //   if (imageFile != null) {
-  //     log(imageFile!.name);
-  //     bytes = imageFile?.bytes;
-  //     data = await UploadImage().uploadImage(bytes!, imageFile!.name, '${IP().getIp}/upload', note: Accuracy().getAcc)
-  //         as Map<String, dynamic>;
+  Future<void> sendToServer() async {
+    data = await UploadImage().uploadImage(_photoBytes!, 'burda.jpg', '${IP().getIp}/upload', note: Accuracy().getAcc)
+        as Map<String, dynamic>;
 
-  //     bytesFromServer = base64Decode(data!['img']);
-  //     result = {};
-  //     for (final item in data!["predictions"]) {
-  //       final name = item["class_name"] as String;
-  //       final conf = (item["confidence"] as num).toDouble();
-  //       final rounded = double.parse(conf.toStringAsFixed(2));
+    bytesFromServer = base64Decode(data!['img']);
+    result = {};
+    for (final item in data!["predictions"]) {
+      final name = item["class_name"] as String;
+      final conf = (item["confidence"] as num).toDouble();
+      final rounded = double.parse(conf.toStringAsFixed(2));
 
-  //       result.putIfAbsent(name, () => []);
-  //       result[name]!.add(rounded);
-  //     }
+      result.putIfAbsent(name, () => []);
+      result[name]!.add(rounded);
+    }
 
-  //     if (!result.isEmpty) {
-  //       if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
-  //         allowRedacting = true;
-  //         ErrorNotifier.show('Доступно редактирование');
-  //       } else {
-  //         allowRedacting = false;
-  //       }
-  //     }
-  //     setState(() {});
-  //   }
-  // }
+    if (!result.isEmpty) {
+      if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
+        allowRedacting = true;
+        ErrorNotifier.show('Доступно редактирование');
+      } else {
+        allowRedacting = false;
+      }
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -211,8 +253,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                 CustomButtonModified(
                                   color: Color(CustomColors.bright),
                                   onTap: () {
-                                    showBoxes = !showBoxes;
-                                    setState(() {});
+                                    _captureFrame();
                                   },
                                   width: 50,
                                   height: 50,

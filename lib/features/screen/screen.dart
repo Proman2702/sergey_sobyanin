@@ -64,7 +64,8 @@ class _ScreenState extends State<Screen> {
                           height: h,
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(15),
-                              color: Color(CustomColors.main),
+                              color: Color(CustomColors.main).withOpacity(0.4),
+                              border: Border.all(color: Color(CustomColors.mainDark).withOpacity(0.3), width: 3),
                               boxShadow: [
                                 BoxShadow(offset: Offset(0, 3), blurRadius: 10, spreadRadius: 4, color: Colors.black26)
                               ]),
@@ -83,7 +84,7 @@ class _ScreenState extends State<Screen> {
                                       foreground: Paint()
                                         ..style = PaintingStyle.stroke
                                         ..strokeWidth = 2
-                                        ..color = Color(CustomColors.bright),
+                                        ..color = Color(CustomColors.main),
                                     ),
                                   ),
                                   const Text(
@@ -92,7 +93,7 @@ class _ScreenState extends State<Screen> {
                                       letterSpacing: 2,
                                       fontSize: 36,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(CustomColors.bright),
+                                      color: Color(CustomColors.main),
                                     ),
                                   ),
                                 ],
@@ -134,7 +135,9 @@ class _ScreenState extends State<Screen> {
                                   },
                                   width: 320,
                                   height: 60,
-                                  color: chosen_module == 0 ? Color(CustomColors.accent) : Color(CustomColors.main),
+                                  color: chosen_module == 0
+                                      ? Color(CustomColors.darkAccent)
+                                      : Color(CustomColors.background),
                                   child: Row(
                                     children: [
                                       SizedBox(width: 20),
@@ -170,7 +173,9 @@ class _ScreenState extends State<Screen> {
                                 },
                                 width: 320,
                                 height: 60,
-                                color: chosen_module == 1 ? Color(CustomColors.accent) : Color(CustomColors.main),
+                                color: chosen_module == 1
+                                    ? Color(CustomColors.darkAccent)
+                                    : Color(CustomColors.background),
                                 child: Row(
                                   children: [
                                     SizedBox(width: 20),
@@ -198,36 +203,36 @@ class _ScreenState extends State<Screen> {
                                   ],
                                 ),
                               ),
-                              SizedBox(
-                                height: h - 401,
-                                child: Stack(
-                                  children: [
-                                    Positioned.fill(
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(15),
-                                          gradient: TileGrad2(),
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      right: 30,
-                                      bottom: 30,
-                                      child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
-                                    ),
-                                    Positioned(
-                                      right: 110,
-                                      bottom: 50,
-                                      child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
-                                    ),
-                                    Positioned(
-                                      right: 50,
-                                      bottom: 110,
-                                      child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
-                                    ),
-                                  ],
-                                ),
-                              )
+                              // SizedBox(
+                              //   height: h - 401,
+                              //   child: Stack(
+                              //     children: [
+                              //       Positioned.fill(
+                              //         child: DecoratedBox(
+                              //           decoration: BoxDecoration(
+                              //             borderRadius: BorderRadius.circular(15),
+                              //             gradient: TileGrad2(),
+                              //           ),
+                              //         ),
+                              //       ),
+                              //       Positioned(
+                              //         right: 30,
+                              //         bottom: 30,
+                              //         child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
+                              //       ),
+                              //       Positioned(
+                              //         right: 110,
+                              //         bottom: 50,
+                              //         child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
+                              //       ),
+                              //       Positioned(
+                              //         right: 50,
+                              //         bottom: 110,
+                              //         child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
+                              //       ),
+                              //     ],
+                              //   ),
+                              // )
                             ],
                           ),
                         ),
@@ -256,7 +261,12 @@ class _ScreenState extends State<Screen> {
                                 borderRadius: BorderRadius.circular(10),
                                 child: Ink(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: Color(CustomColors.main).withOpacity(0.4),
+                                    border: Border.all(color: Color(CustomColors.mainDark).withOpacity(0.3), width: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          offset: Offset(0, 3), blurRadius: 10, spreadRadius: 4, color: Colors.black26)
+                                    ],
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                   child: Container(
@@ -265,7 +275,7 @@ class _ScreenState extends State<Screen> {
                                       alignment: Alignment.center,
                                       child: Icon(
                                         Icons.settings,
-                                        color: Color(CustomColors.bright),
+                                        color: Color(CustomColors.darkAccent),
                                         size: 50,
                                       )),
                                 ),
