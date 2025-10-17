@@ -38,11 +38,25 @@ class _MainModuleState extends State<MainModule> {
   Map<String, dynamic> result = {};
   Uint8List? bytesFromServer;
   bool allowRedacting = false;
+  html.MediaStream? _stream;
 
   @override
   void initState() {
     super.initState();
     _initCamera();
+  }
+
+  @override
+  void dispose() {
+    // Останавливаем все треки камеры, если поток есть
+    _stream?.getTracks().forEach((track) => track.stop());
+
+    // Отвязываем видео от потока
+    if (_video != null) {
+      _video!.srcObject = null;
+    }
+
+    super.dispose();
   }
 
   Future<void> _initCamera() async {
@@ -62,6 +76,7 @@ class _MainModuleState extends State<MainModule> {
 
       setState(() {
         _video = video;
+        _stream = stream;
       });
     } catch (e) {
       debugPrint('Ошибка доступа к камере: $e');
@@ -126,10 +141,6 @@ class _MainModuleState extends State<MainModule> {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 10,
         children: [
-          Text(
-            "Введите id инженера",
-            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w500),
-          ),
           Container(
               width: 700,
               height: 70,
@@ -137,6 +148,10 @@ class _MainModuleState extends State<MainModule> {
               decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                      color: Color(CustomColors.mainLight).withOpacity(0.4),
+                      width: 6,
+                      strokeAlign: BorderSide.strokeAlignOutside),
                   boxShadow: [BoxShadow(offset: Offset(0, 4), blurRadius: 4, spreadRadius: 0, color: Colors.black26)]),
               child: TextField(
                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 28, color: Colors.black87),
@@ -149,12 +164,12 @@ class _MainModuleState extends State<MainModule> {
                   contentPadding: EdgeInsets.only(left: 10, bottom: 30),
                   counterText: "",
                   border: InputBorder.none,
-                  labelText: "Ваш id",
-                  labelStyle: TextStyle(color: Colors.black12, fontSize: 28, fontWeight: FontWeight.w700),
+                  labelText: "Ввод ID инженера",
+                  labelStyle: TextStyle(color: Colors.black26, fontSize: 28, fontWeight: FontWeight.w800),
                 ),
               )),
           Padding(
-              padding: const EdgeInsets.only(left: 500, top: 5),
+              padding: const EdgeInsets.only(left: 500, top: 8),
               child: CustomButton(
                 onTap: id != ''
                     ? () async {
@@ -167,7 +182,13 @@ class _MainModuleState extends State<MainModule> {
 
                         close();
 
-                        log(user.id.toString());
+                        _stream?.getTracks().forEach((track) => track.stop());
+
+                        // Отвязываем видео от потока
+                        if (_video != null) {
+                          _video!.srcObject = null;
+                        }
+
                         user.session == 0
                             ? showDialog(
                                 context: context,
@@ -180,8 +201,11 @@ class _MainModuleState extends State<MainModule> {
                             : showDialog(
                                 context: context,
                                 builder: (context) => HandOverInstrumentsDialog(
-                                      user: user,
-                                    ));
+                                    user: user,
+                                    bytes: _photoBytes,
+                                    allowRedacting: allowRedacting,
+                                    bytesFromServer: bytesFromServer,
+                                    result: result));
                       }
                     : () {
                         ErrorNotifier.show('Введите ID');

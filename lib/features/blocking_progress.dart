@@ -24,14 +24,14 @@ class BlockingProgressDialog extends StatelessWidget {
                 height: 28,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
-                  color: Color(CustomColors.mainDark),
+                  color: Color(CustomColors.darkAccent),
                 ),
               ),
               const SizedBox(width: 16),
               Flexible(
                 child: Text(
                   message ?? 'Загрузка...',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: Color(CustomColors.mainDark), fontSize: 20),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: Color(CustomColors.darkAccent), fontSize: 20),
                 ),
               ),
             ],

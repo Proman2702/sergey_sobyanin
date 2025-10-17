@@ -209,8 +209,11 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                                             padding: const EdgeInsets.all(8),
                                             itemCount: widget.result1.keys.length,
                                             itemBuilder: (BuildContext context, int index) {
+                                              final rkeys = widget.result1.keys.toList();
+                                              rkeys.sort();
+
                                               return Text(
-                                                  "${INSTRUMENTS[widget.result1.keys.toList()[index]]} - ${widget.result1[widget.result1.keys.toList()[index]].length} шт.",
+                                                  "${INSTRUMENTS[rkeys[index]]} - ${widget.result1[rkeys[index]].length} шт.",
                                                   style: TextStyle(
                                                       fontSize: 20,
                                                       color: Color(CustomColors.bright),
@@ -232,7 +235,7 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Полученные инструменты',
+                                    'Отданные инструменты',
                                     style: TextStyle(color: Color(CustomColors.main), fontSize: 18),
                                   ),
                                   IconButton(
@@ -269,8 +272,10 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                                             padding: const EdgeInsets.all(8),
                                             itemCount: widget.result2.keys.length,
                                             itemBuilder: (BuildContext context, int index) {
+                                              final rkeys = widget.result2.keys.toList();
+                                              rkeys.sort();
                                               return Text(
-                                                  "${INSTRUMENTS[widget.result2.keys.toList()[index]]} - ${widget.result2[widget.result2.keys.toList()[index]].length} шт.",
+                                                  "${INSTRUMENTS[rkeys[index]]} - ${widget.result2[rkeys[index]].length} шт.",
                                                   style: TextStyle(
                                                       fontSize: 20,
                                                       color: Color(CustomColors.bright),

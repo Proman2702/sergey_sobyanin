@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:sergey_sobyanin/etc/colors/colors.dart';
@@ -64,7 +65,7 @@ class _ScreenState extends State<Screen> {
                           height: h,
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(15),
-                              color: Color(CustomColors.main).withOpacity(0.4),
+                              color: Color(CustomColors.main).withOpacity(0.2),
                               border: Border.all(color: Color(CustomColors.mainDark).withOpacity(0.3), width: 3),
                               boxShadow: [
                                 BoxShadow(offset: Offset(0, 3), blurRadius: 10, spreadRadius: 4, color: Colors.black26)
@@ -72,167 +73,195 @@ class _ScreenState extends State<Screen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              SizedBox(height: 20),
+                              SizedBox(height: 30),
                               Stack(
                                 children: [
-                                  Text(
-                                    "Аэрофлот ТОиР",
-                                    style: TextStyle(
-                                      letterSpacing: 2,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w800,
-                                      foreground: Paint()
-                                        ..style = PaintingStyle.stroke
-                                        ..strokeWidth = 2
-                                        ..color = Color(CustomColors.main),
-                                    ),
-                                  ),
-                                  const Text(
-                                    "Аэрофлот ТОиР",
-                                    style: TextStyle(
-                                      letterSpacing: 2,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w800,
+                                  Container(
+                                    height: 140,
+                                    width: 320,
+                                    decoration: BoxDecoration(
+                                        color: Color(CustomColors.darkAccent),
+                                        borderRadius: BorderRadius.circular(15),
+                                        boxShadow: [
+                                          BoxShadow(
+                                              offset: Offset(0.0, 4.0),
+                                              color: Colors.black26,
+                                              blurRadius: 6,
+                                              spreadRadius: 2)
+                                        ]),
+                                    padding: EdgeInsets.all(16),
+                                    child: Image.asset(
+                                      "images/logo.png",
+                                      fit: BoxFit.contain,
                                       color: Color(CustomColors.main),
                                     ),
-                                  ),
+                                  )
                                 ],
                               ),
-                              SizedBox(height: 20),
-                              Container(
-                                height: 140,
-                                width: 320,
-                                alignment: Alignment.center,
-                                decoration:
-                                    BoxDecoration(gradient: TileGrad1(), borderRadius: BorderRadius.circular(15)),
-                                child: Stack(
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 10, right: 30),
-                                      child: Icon(
-                                        Icons.settings_outlined,
-                                        color: Colors.white,
-                                        size: 90,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 5, left: 60),
-                                      child: Icon(
-                                        Icons.settings_outlined,
-                                        color: Colors.white,
-                                        size: 60,
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
                               SizedBox(height: 30),
-                              CustomButtonModified(
-                                  onTap: () {
-                                    setState(() {
-                                      chosen_module = 0;
-                                    });
-                                  },
-                                  width: 320,
-                                  height: 60,
-                                  color: chosen_module == 0
-                                      ? Color(CustomColors.darkAccent)
-                                      : Color(CustomColors.background),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(width: 20),
-                                      Icon(
-                                        Icons.home_rounded,
-                                        size: 35,
-                                        color: Color(CustomColors.mainDark),
-                                      ),
-                                      SizedBox(width: 15),
-                                      Container(
-                                        height: 40,
-                                        width: 3,
-                                        color: Color(CustomColors.shadow),
-                                      ),
-                                      SizedBox(width: 20),
-                                      Text(
-                                        'Главная',
-                                        style: TextStyle(
-                                            fontSize: 25,
-                                            color: chosen_module == 0
-                                                ? Color(CustomColors.main)
-                                                : Color(CustomColors.darkAccent),
-                                            fontWeight: FontWeight.w600),
-                                      )
-                                    ],
-                                  )),
-                              SizedBox(height: 20),
-                              CustomButtonModified(
-                                onTap: () {
-                                  setState(() {
-                                    chosen_module = 1;
-                                  });
-                                },
-                                width: 320,
-                                height: 60,
-                                color: chosen_module == 1
-                                    ? Color(CustomColors.darkAccent)
-                                    : Color(CustomColors.background),
-                                child: Row(
-                                  children: [
-                                    SizedBox(width: 20),
-                                    Icon(
-                                      Icons.access_time,
-                                      size: 35,
-                                      color: Color(CustomColors.mainDark),
-                                    ),
-                                    SizedBox(width: 15),
-                                    Container(
-                                      height: 40,
-                                      width: 3,
-                                      color: Color(CustomColors.shadow),
-                                    ),
-                                    SizedBox(width: 20),
-                                    Text(
-                                      'История',
-                                      style: TextStyle(
-                                          fontSize: 25,
-                                          color: chosen_module == 1
-                                              ? Color(CustomColors.main)
-                                              : Color(CustomColors.darkAccent),
-                                          fontWeight: FontWeight.w600),
-                                    )
-                                  ],
-                                ),
-                              ),
-                              // SizedBox(
-                              //   height: h - 401,
+                              // Container(
+                              //   height: 140,
+                              //   width: 320,
+                              //   alignment: Alignment.center,
+                              //   decoration:
+                              //       BoxDecoration(gradient: TileGrad1(), borderRadius: BorderRadius.circular(15)),
                               //   child: Stack(
                               //     children: [
-                              //       Positioned.fill(
-                              //         child: DecoratedBox(
-                              //           decoration: BoxDecoration(
-                              //             borderRadius: BorderRadius.circular(15),
-                              //             gradient: TileGrad2(),
-                              //           ),
+                              //       Padding(
+                              //         padding: EdgeInsets.only(top: 10, right: 30),
+                              //         child: Icon(
+                              //           Icons.settings_outlined,
+                              //           color: Colors.white,
+                              //           size: 90,
                               //         ),
                               //       ),
-                              //       Positioned(
-                              //         right: 30,
-                              //         bottom: 30,
-                              //         child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
-                              //       ),
-                              //       Positioned(
-                              //         right: 110,
-                              //         bottom: 50,
-                              //         child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
-                              //       ),
-                              //       Positioned(
-                              //         right: 50,
-                              //         bottom: 110,
-                              //         child: Icon(Icons.airplanemode_active, size: 50, color: Colors.white),
-                              //       ),
+                              //       Padding(
+                              //         padding: const EdgeInsets.only(bottom: 5, left: 60),
+                              //         child: Icon(
+                              //           Icons.settings_outlined,
+                              //           color: Colors.white,
+                              //           size: 60,
+                              //         ),
+                              //       )
                               //     ],
                               //   ),
-                              // )
+                              // ),
+                              // SizedBox(height: 30),
+                              Container(
+                                height: 560,
+                                width: 320,
+                                decoration: BoxDecoration(
+                                    color: Color(CustomColors.mainLight).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(15)),
+                                child: Column(children: [
+                                  SizedBox(height: 16),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Material(
+                                        elevation: 0,
+                                        borderRadius: BorderRadius.circular(15),
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                chosen_module = 0;
+                                              });
+                                            },
+                                            borderRadius: BorderRadius.circular(15),
+                                            child: Ink(
+                                              decoration: BoxDecoration(
+                                                color: chosen_module == 0
+                                                    ? Color(CustomColors.accent)
+                                                    : Color(CustomColors.background).withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(15),
+                                              ),
+                                              child: SizedBox(
+                                                height: 50,
+                                                child: Row(
+                                                  children: [
+                                                    SizedBox(width: 20),
+                                                    Icon(
+                                                      Icons.home_rounded,
+                                                      size: 30,
+                                                      color: Color(CustomColors.main),
+                                                    ),
+                                                    SizedBox(width: 20),
+                                                    Text(
+                                                      'Главная',
+                                                      style: TextStyle(
+                                                          fontSize: 22,
+                                                          color: chosen_module == 0
+                                                              ? Color(CustomColors.main)
+                                                              : Color(CustomColors.darkAccent),
+                                                          fontWeight: FontWeight.w600),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ))),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Material(
+                                        elevation: 0,
+                                        borderRadius: BorderRadius.circular(15),
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                chosen_module = 1;
+                                              });
+                                            },
+                                            borderRadius: BorderRadius.circular(15),
+                                            child: Ink(
+                                              decoration: BoxDecoration(
+                                                color: chosen_module == 1
+                                                    ? Color(CustomColors.accent)
+                                                    : Color(CustomColors.background).withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(15),
+                                              ),
+                                              child: SizedBox(
+                                                height: 50,
+                                                child: Row(
+                                                  children: [
+                                                    SizedBox(width: 20),
+                                                    Icon(
+                                                      Icons.access_time,
+                                                      size: 30,
+                                                      color: Color(CustomColors.main),
+                                                    ),
+                                                    SizedBox(width: 20),
+                                                    Text(
+                                                      'История',
+                                                      style: TextStyle(
+                                                          fontSize: 22,
+                                                          color: chosen_module == 1
+                                                              ? Color(CustomColors.main)
+                                                              : Color(CustomColors.darkAccent),
+                                                          fontWeight: FontWeight.w600),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ))),
+                                  ),
+                                  SizedBox(
+                                    height: 428,
+                                    child: Stack(
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      children: [
+                                        Positioned.fill(
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(15),
+                                              gradient: LinearGradient(colors: [
+                                                Color(CustomColors.mainLight).withOpacity(0.0),
+                                                Color(CustomColors.mainLight).withOpacity(0.3)
+                                              ], begin: Alignment.center, end: Alignment.bottomRight),
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          right: -70,
+                                          bottom: -90,
+                                          child: Transform.rotate(
+                                            angle: 6 * pi / 4,
+                                            child: Image.asset(
+                                              "images/plane.png",
+                                              color: Color(CustomColors.mainLight).withOpacity(0.1),
+                                              width: 300,
+                                              height: 300,
+                                            ),
+                                            // child: Icon(Icons.airplanemode_active,
+                                            //     size: 300, color: Color(CustomColors.mainLight).withOpacity(0.1))
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                ]),
+                              ),
                             ],
                           ),
                         ),
@@ -255,7 +284,6 @@ class _ScreenState extends State<Screen> {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: () {
-                                  log("настройки");
                                   showDialog(context: context, builder: (context) => SettingsDialog());
                                 },
                                 borderRadius: BorderRadius.circular(10),

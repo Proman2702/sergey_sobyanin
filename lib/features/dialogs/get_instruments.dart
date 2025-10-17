@@ -42,7 +42,6 @@ class GetInstrumentsDialog extends StatefulWidget {
 
 class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   final database = UserDatabaseService();
-  PlatformFile? imageFile;
   Uint8List? bytesFromServer;
   bool sendingToServer = false;
   Map<String, dynamic>? data;
@@ -52,13 +51,28 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
   html.VideoElement? _video;
   html.CanvasElement? _canvas;
   Uint8List? _photoBytes;
+  html.MediaStream? _stream;
 
   @override
   void initState() {
     super.initState();
+    _initCamera();
     result = widget.result;
     allowRedacting = widget.allowRedacting;
     bytesFromServer = widget.bytesFromServer;
+  }
+
+  @override
+  void dispose() {
+    // Останавливаем все треки камеры, если поток есть
+    _stream?.getTracks().forEach((track) => track.stop());
+
+    // Отвязываем видео от потока
+    if (_video != null) {
+      _video!.srcObject = null;
+    }
+
+    super.dispose();
   }
 
   void updateCallback(Map<String, dynamic> newResult) {
@@ -124,6 +138,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
 
       setState(() {
         _video = video;
+        _stream = stream;
       });
     } catch (e) {
       debugPrint('Ошибка доступа к камере: $e');
@@ -145,9 +160,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
     reader.readAsArrayBuffer(blob!);
     await reader.onLoad.first;
 
-    setState(() {
-      _photoBytes = reader.result as Uint8List?;
-    });
+    _photoBytes = reader.result as Uint8List?;
   }
 
   // открыть картинку и отправить ее на сервер
@@ -230,15 +243,16 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                         ]),
                                         clipBehavior: Clip.hardEdge,
                                         child: InteractiveViewer(
+                                            clipBehavior: Clip.hardEdge,
                                             child: Image.memory(
                                                 Uint8List.fromList(!showBoxes
-                                                    ? widget.bytes!
+                                                    ? _photoBytes ?? widget.bytes!
                                                     : bytesFromServer ?? widget.bytes as List<int>),
                                                 fit: BoxFit.contain)),
                                       ),
                                     ),
                                   )
-                                : Text('говно'),
+                                : Center(child: Text('Что-то пошло не так')),
                           ),
                           SizedBox(height: 30),
                           Container(
@@ -252,8 +266,15 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                               children: [
                                 CustomButtonModified(
                                   color: Color(CustomColors.bright),
-                                  onTap: () {
-                                    _captureFrame();
+                                  onTap: () async {
+                                    final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
+
+                                    await _captureFrame();
+
+                                    await sendToServer();
+
+                                    close();
+                                    setState(() {});
                                   },
                                   width: 50,
                                   height: 50,
@@ -282,7 +303,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                 CustomButton(
                                   onTap: allowRedacting
                                       ? () {
-                                          if (imageFile == null) {
+                                          if (_photoBytes == null && widget.bytes == null) {
                                             ErrorNotifier.show('Картинка не загружена!');
                                           } else if (result.isEmpty) {
                                             ErrorNotifier.show('Инструменты еще не определены или их нет!');
@@ -290,7 +311,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                             showDialog(
                                                 context: context,
                                                 builder: (context) => RedactorDialog(
-                                                    picture: widget.bytes!,
+                                                    picture: _photoBytes ?? widget.bytes!,
                                                     result: result,
                                                     updateCallback: updateCallback));
                                             setState(() {});
@@ -337,9 +358,20 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                   color: Color(CustomColors.mainLight).withOpacity(0.1)),
                               padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                               child: result.isEmpty
-                                  ? ConstrainedBox(
-                                      constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
-                                      child: CircularProgressIndicator())
+                                  ? widget.bytes == null && _photoBytes == null
+                                      ? ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
+                                          child: CircularProgressIndicator())
+                                      : Center(
+                                          child: Text(
+                                            "Инструменты не найдены!",
+                                            style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w600,
+                                                height: 1.2,
+                                                color: Color(CustomColors.mainLight)),
+                                          ),
+                                        )
                                   : GridView.count(
                                       crossAxisCount: 1, // две колонки
                                       crossAxisSpacing: 24,
@@ -428,7 +460,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                 SizedBox(width: 30),
                                 CustomButton(
                                   onTap: () async {
-                                    if (imageFile == null) {
+                                    if (_photoBytes == null && widget.bytes == null) {
                                       ErrorNotifier.show('Картинка не загружена!');
                                     } else if (result.isEmpty) {
                                       ErrorNotifier.show('Инструменты еще не определены или их нет!');
@@ -437,8 +469,8 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
 
                                       await Future.delayed(Duration(milliseconds: 200));
 
-                                      final base64pic = await ImageService.compressToBase64(widget.bytes!);
-                                      log('задаунскейлили');
+                                      final base64pic =
+                                          await ImageService.compressToBase64(_photoBytes ?? widget.bytes!);
                                       await database.upsertElement(
                                           widget.user.copyWith(session: 1, pictureData: base64pic, result: result));
 

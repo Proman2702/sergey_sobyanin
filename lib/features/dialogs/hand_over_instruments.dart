@@ -21,7 +21,18 @@ import 'package:sergey_sobyanin/repositories/server/ip.dart';
 import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
 
 class HandOverInstrumentsDialog extends StatefulWidget {
-  const HandOverInstrumentsDialog({super.key, required this.user});
+  const HandOverInstrumentsDialog(
+      {super.key,
+      required this.user,
+      required this.bytes,
+      required this.allowRedacting,
+      required this.bytesFromServer,
+      required this.result});
+  final Uint8List? bytes;
+
+  final bool allowRedacting;
+  final Map<String, dynamic> result;
+  final Uint8List? bytesFromServer;
 
   final CustomUser user;
   @override
@@ -30,15 +41,38 @@ class HandOverInstrumentsDialog extends StatefulWidget {
 
 class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
   final database = UserDatabaseService();
-
-  PlatformFile? imageFile;
-  Uint8List? bytes;
   Uint8List? bytesFromServer;
   bool sendingToServer = false;
   Map<String, dynamic>? data;
   Map<String, dynamic> result = {};
   bool showBoxes = false;
   bool allowRedacting = false;
+  html.VideoElement? _video;
+  html.CanvasElement? _canvas;
+  Uint8List? _photoBytes;
+  html.MediaStream? _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+    result = widget.result;
+    allowRedacting = widget.allowRedacting;
+    bytesFromServer = widget.bytesFromServer;
+  }
+
+  @override
+  void dispose() {
+    // Останавливаем все треки камеры, если поток есть
+    _stream?.getTracks().forEach((track) => track.stop());
+
+    // Отвязываем видео от потока
+    if (_video != null) {
+      _video!.srcObject = null;
+    }
+
+    super.dispose();
+  }
 
   void updateCallback(Map<String, dynamic> newResult) {
     result = newResult;
@@ -85,66 +119,82 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
     html.Url.revokeObjectUrl(url);
   }
 
-  Future<void> pickOneImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: false,
-      withData: true,
-      type: FileType.image,
-    );
-    if (result == null) return;
-    setState(() => imageFile = result.files.single);
-  }
+  Future<void> _initCamera() async {
+    final video = html.VideoElement()
+      ..autoplay = true
+      ..muted = true
+      ..style.width = '100%'
+      ..style.height = '100%';
 
-  void setImage() async {
-    log('тык');
-    await pickOneImage();
-    if (imageFile != null) {
-      log(imageFile!.name);
-      bytes = imageFile?.bytes;
-      setState(() {});
+    try {
+      final stream = await html.window.navigator.mediaDevices!.getUserMedia({
+        'video': {'facingMode': 'user'}, // 'environment' для задней камеры
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      setState(() {
+        _video = video;
+        _stream = stream;
+      });
+    } catch (e) {
+      debugPrint('Ошибка доступа к камере: $e');
     }
   }
 
-  List parseToDisplay(Map<String, dynamic> result) {
-    List items = result.entries.toList();
-    return items;
+  Future<void> _captureFrame() async {
+    if (_video == null) return;
+
+    final width = _video!.videoWidth;
+    final height = _video!.videoHeight;
+
+    _canvas = html.CanvasElement(width: width, height: height);
+    final ctx = _canvas!.context2D;
+    ctx.drawImage(_video!, 0, 0);
+
+    final blob = await _canvas!.toBlob('image/png');
+    final reader = html.FileReader();
+    reader.readAsArrayBuffer(blob!);
+    await reader.onLoad.first;
+
+    _photoBytes = reader.result as Uint8List?;
   }
 
-  void setImageWithSendingToServer() async {
-    await pickOneImage();
-    if (imageFile != null) {
-      log(imageFile!.name);
-      bytes = imageFile?.bytes;
-      data = await UploadImage().uploadImage(bytes!, imageFile!.name, '${IP().getIp}/upload', note: Accuracy().getAcc)
-          as Map<String, dynamic>;
+  // открыть картинку и отправить ее на сервер
+  Future<void> sendToServer() async {
+    data = await UploadImage().uploadImage(_photoBytes!, 'burda.jpg', '${IP().getIp}/upload', note: Accuracy().getAcc)
+        as Map<String, dynamic>;
 
-      bytesFromServer = base64Decode(data!['img']);
-      result = {};
-      for (final item in data!["predictions"]) {
-        final name = item["class_name"] as String;
-        final conf = (item["confidence"] as num).toDouble();
-        final rounded = double.parse(conf.toStringAsFixed(2));
-        result.putIfAbsent(name, () => []);
-        result[name]!.add(rounded);
-      }
+    bytesFromServer = base64Decode(data!['img']);
+    result = {};
+    for (final item in data!["predictions"]) {
+      final name = item["class_name"] as String;
+      final conf = (item["confidence"] as num).toDouble();
+      final rounded = double.parse(conf.toStringAsFixed(2));
 
-      if (result.isNotEmpty) {
-        if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
-          allowRedacting = true;
-          ErrorNotifier.show('Доступно редактирование');
-        } else {
-          allowRedacting = false;
-        }
-      }
-      setState(() {});
+      result.putIfAbsent(name, () => []);
+      result[name]!.add(rounded);
     }
+
+    if (!result.isEmpty) {
+      if (result.values.expand((list) => list).reduce((a, b) => a < b ? a : b) < Accuracy().getBorder / 100) {
+        allowRedacting = true;
+        ErrorNotifier.show('Доступно редактирование');
+      } else {
+        allowRedacting = false;
+      }
+    }
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
     final frameW = (size.width - 16 * 2).clamp(0.0, double.infinity);
     final frameH = (size.height - 16 * 2).clamp(0.0, double.infinity);
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
@@ -162,87 +212,126 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                 child: Row(
                   children: [
                     Container(
-                      width: 700,
+                      width: 850,
                       height: 800,
                       alignment: Alignment.center,
-                      decoration:
-                          BoxDecoration(borderRadius: BorderRadius.circular(16), color: Color(CustomColors.shadow)),
-                      child: bytes == null
-                          ? GestureDetector(
-                              onTap: setImageWithSendingToServer,
-                              child: Container(
-                                  width: 300,
-                                  height: 300,
-                                  alignment: Alignment.center,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    spacing: 10,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        spacing: 10,
-                                        children: [
-                                          Icon(Icons.photo_size_select_actual_outlined,
-                                              color: Colors.black54, size: 60),
-                                          Icon(Icons.add, color: Colors.black54, size: 60),
-                                        ],
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Color(CustomColors.background),
+                        // border: Border.all(color: Color(CustomColors.mainDark), width: 5)
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 30),
+                          Container(
+                            width: 790,
+                            height: 600,
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                color: Color(CustomColors.backgroundDark).withOpacity(0.1)),
+                            child: widget.bytes != null
+                                ? Center(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: 820, maxHeight: 600),
+                                      child: Container(
+                                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), boxShadow: [
+                                          BoxShadow(offset: Offset(0, 4), color: Colors.black38, blurRadius: 3)
+                                        ]),
+                                        clipBehavior: Clip.hardEdge,
+                                        child: InteractiveViewer(
+                                            clipBehavior: Clip.hardEdge,
+                                            child: Image.memory(
+                                                Uint8List.fromList(!showBoxes
+                                                    ? _photoBytes ?? widget.bytes!
+                                                    : bytesFromServer ?? widget.bytes as List<int>),
+                                                fit: BoxFit.contain)),
                                       ),
-                                      Text(
-                                        'Нажмите, чтобы добавить фото',
-                                        style:
-                                            TextStyle(color: Colors.black54, fontWeight: FontWeight.w500, fontSize: 22),
-                                        textAlign: TextAlign.center,
-                                      )
-                                    ],
-                                  )),
-                            )
-                          : Column(
+                                    ),
+                                  )
+                                : Center(child: Text('Что-то пошло не так')),
+                          ),
+                          SizedBox(height: 30),
+                          Container(
+                            width: 790,
+                            height: 100,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                color: Color(CustomColors.backgroundDark).withOpacity(0.1)),
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                ConstrainedBox(
-                                  constraints: BoxConstraints(maxWidth: 700, maxHeight: 700),
-                                  child: Container(
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
-                                    child: InteractiveViewer(
-                                        child: Image.memory(
-                                            Uint8List.fromList(
-                                                !showBoxes ? bytes! : bytesFromServer ?? bytes as List<int>),
-                                            fit: BoxFit.contain)),
+                                CustomButtonModified(
+                                  color: Color(CustomColors.bright),
+                                  onTap: () async {
+                                    final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
+
+                                    await _captureFrame();
+
+                                    await sendToServer();
+
+                                    close();
+                                    setState(() {});
+                                  },
+                                  width: 50,
+                                  height: 50,
+                                  child: Icon(
+                                    Icons.refresh,
+                                    color: Color(CustomColors.main),
+                                    size: 35,
                                   ),
                                 ),
-                                SizedBox(height: 15),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    FloatingActionButton(
-                                      backgroundColor: Color(CustomColors.accent),
-                                      onPressed: setImageWithSendingToServer,
-                                      child: Icon(
-                                        Icons.refresh,
-                                        color: Color(CustomColors.main),
-                                        size: 40,
-                                      ),
-                                    ),
-                                    SizedBox(width: 20),
-                                    FloatingActionButton(
-                                      backgroundColor: Color(CustomColors.accent),
-                                      onPressed: () {
-                                        showBoxes = !showBoxes;
-                                        setState(() {});
-                                      },
-                                      child: Icon(
-                                        Icons.check_box_outlined,
-                                        color: Color(CustomColors.main),
-                                        size: 40,
-                                      ),
-                                    ),
-                                  ],
-                                )
+                                SizedBox(width: 20),
+                                CustomButtonModified(
+                                  color: Color(CustomColors.bright),
+                                  onTap: () {
+                                    showBoxes = !showBoxes;
+                                    setState(() {});
+                                  },
+                                  width: 50,
+                                  height: 50,
+                                  child: Icon(
+                                    Icons.check_box_outlined,
+                                    color: Color(CustomColors.main),
+                                    size: 35,
+                                  ),
+                                ),
+                                SizedBox(width: 20),
+                                CustomButton(
+                                  onTap: allowRedacting
+                                      ? () {
+                                          if (_photoBytes == null && widget.bytes == null) {
+                                            ErrorNotifier.show('Картинка не загружена!');
+                                          } else if (result.isEmpty) {
+                                            ErrorNotifier.show('Инструменты еще не определены или их нет!');
+                                          } else {
+                                            showDialog(
+                                                context: context,
+                                                builder: (context) => RedactorDialog(
+                                                    picture: _photoBytes ?? widget.bytes!,
+                                                    result: result,
+                                                    updateCallback: updateCallback));
+                                            setState(() {});
+                                          }
+                                        }
+                                      : () {
+                                          ErrorNotifier.show('Редактирование недоступно');
+                                        },
+                                  text: 'Редактировать',
+                                  width: 200,
+                                  height: 50,
+                                  color: allowRedacting ? Color(CustomColors.bright) : Color(CustomColors.shadow),
+                                  fontSize: 22,
+                                ),
                               ],
                             ),
+                          )
+                        ],
+                      ),
                     ),
                     Container(
-                      width: 700,
+                      width: 550,
                       height: 800,
                       alignment: Alignment.center,
                       child: Column(
@@ -250,37 +339,52 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                         children: [
                           SizedBox(height: 20),
                           SizedBox(
-                            height: 160,
-                            width: 600,
+                            height: 140,
+                            width: 500,
                             child: Text(
                               'Список отданных инструментов',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 50),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 40),
                             ),
                           ),
-                          SizedBox(height: 30),
                           Container(
-                              width: 600,
-                              height: 450,
+                              width: 480,
+                              height: 520,
                               alignment: Alignment.topCenter,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: Color(CustomColors.mainLight).withOpacity(0.1)),
+                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                               child: result.isEmpty
-                                  ? ConstrainedBox(
-                                      constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
-                                      child: CircularProgressIndicator())
+                                  ? widget.bytes == null && _photoBytes == null
+                                      ? ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: 50, maxHeight: 50),
+                                          child: CircularProgressIndicator())
+                                      : Center(
+                                          child: Text(
+                                            "Инструменты не найдены!",
+                                            style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w600,
+                                                height: 1.2,
+                                                color: Color(CustomColors.mainLight)),
+                                          ),
+                                        )
                                   : GridView.count(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 12,
-                                      childAspectRatio: 3.5,
+                                      crossAxisCount: 1, // две колонки
+                                      crossAxisSpacing: 24,
+                                      mainAxisSpacing: 1,
+                                      childAspectRatio: 8,
+
                                       shrinkWrap: true,
-                                      children: parseToDisplay(result).map((entry) {
+                                      children: result.entries.toList().map((entry) {
                                         final name = INSTRUMENTS[entry.key];
                                         final count = entry.value.length;
 
                                         return Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.circular(15),
-                                            color: Colors.white,
                                           ),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -289,7 +393,10 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                                 child: Text(
                                                   name!,
                                                   style: const TextStyle(
-                                                      fontSize: 22, fontWeight: FontWeight.w500, height: 1.2),
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.w600,
+                                                      height: 1.2,
+                                                      color: Colors.white),
                                                   softWrap: true,
                                                   maxLines: 2,
                                                   overflow: TextOverflow.ellipsis,
@@ -316,97 +423,74 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                     )),
                           SizedBox(height: 40),
                           SizedBox(
-                            width: 600,
+                            width: 500,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 CustomButtonModified(
-                                    onTap: () async {
-                                      downloadJson('exported_hand_over.json', result);
-                                    },
-                                    width: 80,
-                                    height: 50,
-                                    color: Color(CustomColors.accent),
-                                    child: Row(
-                                      children: [
-                                        SizedBox(width: 5),
-                                        Icon(
-                                          Icons.save_outlined,
-                                          color: Color(CustomColors.main),
-                                          size: 30,
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(bottom: 15.0),
-                                          child: Text(
-                                            'JSON',
-                                            style: TextStyle(
-                                                color: Color(CustomColors.main),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w800),
-                                          ),
-                                        )
-                                      ],
-                                    )),
-                                SizedBox(width: 30),
-                                CustomButton(
-                                  onTap: allowRedacting
-                                      ? () {
-                                          if (imageFile == null) {
-                                            ErrorNotifier.show('Картинка не загружена!');
-                                          } else if (result.isEmpty) {
-                                            ErrorNotifier.show('Инструменты еще не определены или их нет!');
-                                          } else {
-                                            showDialog(
-                                                context: context,
-                                                builder: (context) => RedactorDialog(
-                                                    picture: bytes!, result: result, updateCallback: updateCallback));
-                                            setState(() {});
-                                          }
-                                        }
-                                      : () {
-                                          ErrorNotifier.show('Редактирование недоступно');
-                                        },
-                                  text: 'Редактировать',
-                                  width: 220,
+                                  width: 90,
                                   height: 50,
-                                  color: allowRedacting ? Color(CustomColors.accent) : Color(CustomColors.shadow),
-                                  fontSize: 25,
+                                  color: Color(CustomColors.accent),
+                                  onTap: () async {
+                                    downloadJson('exported_get.json', result);
+                                  },
+                                  child: Row(
+                                    children: [
+                                      SizedBox(width: 5),
+                                      Icon(
+                                        Icons.save_outlined,
+                                        color: Color(CustomColors.main),
+                                        size: 30,
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 15.0),
+                                        child: Text(
+                                          'JSON',
+                                          style: TextStyle(
+                                              color: Color(CustomColors.main),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w800),
+                                        ),
+                                      )
+                                    ],
+                                  ),
                                 ),
                                 SizedBox(width: 30),
                                 CustomButton(
-                                    onTap: () async {
-                                      if (imageFile == null) {
-                                        ErrorNotifier.show('Картинка не загружена!');
-                                      } else if (result.isEmpty) {
-                                        ErrorNotifier.show('Инструменты еще не определены или их нет!');
-                                      } else {
-                                        final close = showBlockingProgress(context, message: 'Сохраняем…');
+                                  onTap: () async {
+                                    if (_photoBytes == null && widget.bytes == null) {
+                                      ErrorNotifier.show('Картинка не загружена!');
+                                    } else if (result.isEmpty) {
+                                      ErrorNotifier.show('Инструменты еще не определены или их нет!');
+                                    } else {
+                                      final close = showBlockingProgress(context, message: 'Сохраняем…');
 
-                                        await Future.delayed(Duration(milliseconds: 200));
+                                      await Future.delayed(Duration(milliseconds: 200));
 
-                                        final firstPic = base64Decode(widget.user.pictureData);
-                                        final secondPic = bytes!;
+                                      final firstPic = base64Decode(widget.user.pictureData);
+                                      final secondPic = _photoBytes ?? widget.bytes!;
 
-                                        close();
+                                      close();
 
-                                        Navigator.pop(context);
+                                      Navigator.pop(context);
 
-                                        showDialog(
-                                            context: context,
-                                            builder: (context) => ComparePicsDialog(
-                                                  id: widget.user.id,
-                                                  pic1: firstPic,
-                                                  pic2: secondPic,
-                                                  result1: widget.user.result,
-                                                  result2: result,
-                                                ));
-                                      }
-                                    },
-                                    text: 'Сохранить',
-                                    width: 220,
-                                    height: 50,
-                                    color: Color(CustomColors.accent),
-                                    fontSize: 25)
+                                      showDialog(
+                                          context: context,
+                                          builder: (context) => ComparePicsDialog(
+                                                id: widget.user.id,
+                                                pic1: firstPic,
+                                                pic2: secondPic,
+                                                result1: widget.user.result,
+                                                result2: result,
+                                              ));
+                                    }
+                                  },
+                                  text: 'Сохранить',
+                                  width: 220,
+                                  height: 50,
+                                  color: Color(CustomColors.accent),
+                                  fontSize: 26,
+                                ),
                               ],
                             ),
                           )
