@@ -182,12 +182,12 @@ class _MainModuleState extends State<MainModule> {
 
                         close();
 
-                        _stream?.getTracks().forEach((track) => track.stop());
+                        // _stream?.getTracks().forEach((track) => track.stop());
 
-                        // Отвязываем видео от потока
-                        if (_video != null) {
-                          _video!.srcObject = null;
-                        }
+                        // // Отвязываем видео от потока
+                        // if (_video != null) {
+                        //   _video!.srcObject = null;
+                        // }
 
                         user.session == 0
                             ? showDialog(
