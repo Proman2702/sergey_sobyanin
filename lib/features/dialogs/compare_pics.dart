@@ -191,12 +191,21 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                             Container(
                               width: 650,
                               height: 500,
+                              padding: EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                  color: Color(CustomColors.shadow), borderRadius: BorderRadius.circular(15)),
+                                  color: Color(CustomColors.background), borderRadius: BorderRadius.circular(15)),
                               child: visible1
-                                  ? InteractiveViewer(
-                                      child: Image.memory(Uint8List.fromList(widget.pic1 as List<int>),
-                                          fit: BoxFit.contain))
+                                  ? ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: 820, maxHeight: 600),
+                                      child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(15),
+                                          ),
+                                          clipBehavior: Clip.hardEdge,
+                                          child: InteractiveViewer(
+                                              clipBehavior: Clip.hardEdge,
+                                              child: Image.memory(Uint8List.fromList(widget.pic1 as List<int>),
+                                                  fit: BoxFit.contain))))
                                   : SingleChildScrollView(
                                       child: Container(
                                         width: 200,
@@ -254,12 +263,21 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                             Container(
                               width: 650,
                               height: 500,
+                              padding: EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                  color: Color(CustomColors.shadow), borderRadius: BorderRadius.circular(15)),
+                                  color: Color(CustomColors.background), borderRadius: BorderRadius.circular(15)),
                               child: visible2
-                                  ? InteractiveViewer(
-                                      child: Image.memory(Uint8List.fromList(widget.pic2 as List<int>),
-                                          fit: BoxFit.contain))
+                                  ? ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: 820, maxHeight: 600),
+                                      child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(15),
+                                          ),
+                                          clipBehavior: Clip.hardEdge,
+                                          child: InteractiveViewer(
+                                              clipBehavior: Clip.hardEdge,
+                                              child: Image.memory(Uint8List.fromList(widget.pic2 as List<int>),
+                                                  fit: BoxFit.contain))))
                                   : SingleChildScrollView(
                                       child: Container(
                                         width: 200,
