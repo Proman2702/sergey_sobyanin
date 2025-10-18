@@ -234,7 +234,8 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                             child: widget.bytes != null
                                 ? Center(
                                     child: ConstrainedBox(
-                                      constraints: BoxConstraints(maxWidth: 820, maxHeight: 600),
+                                      constraints:
+                                          BoxConstraints(maxWidth: 820, maxHeight: 600, minHeight: 600, minWidth: 820),
                                       child: Container(
                                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), boxShadow: [
                                           BoxShadow(offset: Offset(0, 4), color: Colors.black38, blurRadius: 3)
@@ -265,7 +266,8 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                 CustomButtonModified(
                                   color: Color(CustomColors.bright),
                                   onTap: () async {
-                                    final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
+                                    final close = showBlockingProgress(context,
+                                        message: 'Фотографируем и обращаемся к серверу...');
 
                                     await _captureFrame();
 

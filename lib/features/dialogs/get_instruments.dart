@@ -267,7 +267,8 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                 CustomButtonModified(
                                   color: Color(CustomColors.bright),
                                   onTap: () async {
-                                    final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
+                                    final close = showBlockingProgress(context,
+                                        message: 'Фотографируем и обращаемся к серверу...');
 
                                     await _captureFrame();
 

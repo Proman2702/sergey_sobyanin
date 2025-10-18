@@ -9,7 +9,9 @@ import 'package:sergey_sobyanin/features/dialogs/get_instruments.dart';
 import 'package:sergey_sobyanin/features/dialogs/hand_over_instruments.dart';
 import 'package:sergey_sobyanin/features/error_screen.dart';
 import 'package:sergey_sobyanin/features/ui_components/custom_button.dart';
+import 'package:sergey_sobyanin/features/ui_components/hover_button.dart';
 import 'package:sergey_sobyanin/repositories/database/database_service.dart';
+import 'package:sergey_sobyanin/repositories/database/models/user.dart';
 import 'package:sergey_sobyanin/repositories/server/accuracy.dart';
 import 'package:sergey_sobyanin/repositories/server/ip.dart';
 import 'package:sergey_sobyanin/repositories/server/upload_to_server.dart';
@@ -39,6 +41,9 @@ class _MainModuleState extends State<MainModule> {
   Uint8List? bytesFromServer;
   bool allowRedacting = false;
   html.MediaStream? _stream;
+
+  bool _isHovering = false;
+  bool _isShowingWidget = false;
 
   @override
   void initState() {
@@ -137,10 +142,11 @@ class _MainModuleState extends State<MainModule> {
       height: widget.h,
       alignment: Alignment.center,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         spacing: 10,
         children: [
+          SizedBox(height: 300),
           Container(
               width: 700,
               height: 70,
@@ -168,54 +174,195 @@ class _MainModuleState extends State<MainModule> {
                   labelStyle: TextStyle(color: Colors.black26, fontSize: 28, fontWeight: FontWeight.w800),
                 ),
               )),
-          Padding(
-              padding: const EdgeInsets.only(left: 500, top: 8),
-              child: CustomButton(
-                onTap: id != ''
-                    ? () async {
-                        final close = showBlockingProgress(context, message: 'Обращаемся к базе данных...');
+          SizedBox(
+            width: 700,
+            child: Row(
+              children: [
+                Container(
+                  width: 100,
+                  height: 50,
+                  alignment: Alignment.centerLeft,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isShowingWidget = !_isShowingWidget;
+                            _isHovering = !_isHovering;
+                          });
+                        },
+                        icon: Icon(Icons.search),
+                        iconSize: 30,
+                        color: Color(CustomColors.mainLight),
+                        onHover: (value) {
+                          if (!_isShowingWidget) {
+                            setState(() {
+                              _isHovering = !_isHovering;
+                            });
+                          }
+                        },
+                      ),
+                      _isHovering
+                          ? Positioned(
+                              bottom: 45,
+                              left: 30,
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                    color: Color(CustomColors.backgroundDark).withOpacity(0.7),
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Text(
+                                  "Показать активные сессии",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            )
+                          : SizedBox()
+                    ],
+                  ),
+                ),
+                SizedBox(width: 400),
+                Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: CustomButton(
+                      onTap: id != ''
+                          ? () async {
+                              final close =
+                                  showBlockingProgress(context, message: 'Фотографируем и обращаемся к серверу...');
 
-                        final user = await database.fetchOrCreateElementById(id);
-                        await _captureFrame();
+                              final user = await database.fetchOrCreateElementById(id);
+                              await _captureFrame();
 
-                        await sendToServer();
+                              await sendToServer();
 
-                        close();
+                              close();
 
-                        // _stream?.getTracks().forEach((track) => track.stop());
+                              _isShowingWidget = false;
 
-                        // // Отвязываем видео от потока
-                        // if (_video != null) {
-                        //   _video!.srcObject = null;
-                        // }
+                              // _stream?.getTracks().forEach((track) => track.stop());
 
-                        user.session == 0
-                            ? showDialog(
-                                context: context,
-                                builder: (context) => GetInstrumentsDialog(
-                                    user: user,
-                                    bytes: _photoBytes,
-                                    allowRedacting: allowRedacting,
-                                    bytesFromServer: bytesFromServer,
-                                    result: result))
-                            : showDialog(
-                                context: context,
-                                builder: (context) => HandOverInstrumentsDialog(
-                                    user: user,
-                                    bytes: _photoBytes,
-                                    allowRedacting: allowRedacting,
-                                    bytesFromServer: bytesFromServer,
-                                    result: result));
-                      }
-                    : () {
-                        ErrorNotifier.show('Введите ID');
-                      },
-                text: 'Готово',
-                width: 200,
-                height: 50,
-                color: Color(CustomColors.accent),
-                fontSize: 27,
-              ))
+                              // // Отвязываем видео от потока
+                              // if (_video != null) {
+                              //   _video!.srcObject = null;
+                              // }
+
+                              user.session == 0
+                                  ? showDialog(
+                                      context: context,
+                                      builder: (context) => GetInstrumentsDialog(
+                                          user: user,
+                                          bytes: _photoBytes,
+                                          allowRedacting: allowRedacting,
+                                          bytesFromServer: bytesFromServer,
+                                          result: result))
+                                  : showDialog(
+                                      context: context,
+                                      builder: (context) => HandOverInstrumentsDialog(
+                                          user: user,
+                                          bytes: _photoBytes,
+                                          allowRedacting: allowRedacting,
+                                          bytesFromServer: bytesFromServer,
+                                          result: result));
+                            }
+                          : () {
+                              ErrorNotifier.show('Введите ID');
+                            },
+                      text: 'Готово',
+                      width: 200,
+                      height: 50,
+                      color: Color(CustomColors.accent),
+                      fontSize: 27,
+                    )),
+              ],
+            ),
+          ),
+          if (_isShowingWidget)
+            Container(
+              width: 700,
+              alignment: Alignment.topLeft,
+              child: Container(
+                  padding: EdgeInsets.all(8),
+                  width: 400,
+                  decoration: BoxDecoration(
+                    color: Color(CustomColors.background).withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Активные сессии",
+                        style:
+                            TextStyle(color: Color(CustomColors.darkAccent), fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                      SizedBox(height: 10),
+                      FutureBuilder(
+                          future: UserDatabaseService().getElements(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            if (snapshot.hasError) {
+                              return Center(child: Text('Ошибка: ${snapshot.error}'));
+                            }
+
+                            List<CustomUser> elements = snapshot.data ?? [];
+
+                            return elements.isNotEmpty
+                                ? Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: elements
+                                        .where((e) => e.session == 1)
+                                        .map((s) => GestureDetector(
+                                              onTap: () async {
+                                                final close = showBlockingProgress(context,
+                                                    message: 'Фотографируем и обращаемся к серверу...');
+
+                                                final user = await database.fetchOrCreateElementById(s.id);
+                                                await _captureFrame();
+
+                                                await sendToServer();
+
+                                                close();
+                                                _isShowingWidget = false;
+
+                                                // _stream?.getTracks().forEach((track) => track.stop());
+
+                                                // // Отвязываем видео от потока
+                                                // if (_video != null) {
+                                                //   _video!.srcObject = null;
+                                                // }
+
+                                                showDialog(
+                                                    context: context,
+                                                    builder: (context) => HandOverInstrumentsDialog(
+                                                        user: user,
+                                                        bytes: _photoBytes,
+                                                        allowRedacting: allowRedacting,
+                                                        bytesFromServer: bytesFromServer,
+                                                        result: result));
+                                              },
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                decoration: BoxDecoration(
+                                                  color: Color(CustomColors.accent),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Text(s.id,
+                                                    style: const TextStyle(
+                                                        fontSize: 15,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: Color(CustomColors.main))),
+                                              ),
+                                            ))
+                                        .toList())
+                                : Text("Активных сессий нет");
+                          }),
+                    ],
+                  )),
+            )
         ],
       ),
     );
