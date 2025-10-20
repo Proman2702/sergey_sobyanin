@@ -28,9 +28,10 @@ class GetInstrumentsDialog extends StatefulWidget {
       required this.bytes,
       required this.allowRedacting,
       required this.bytesFromServer,
+      required this.updater,
       required this.result});
   final Uint8List? bytes;
-
+  final dynamic updater;
   final bool allowRedacting;
   final Map<String, dynamic> result;
   final Uint8List? bytesFromServer;
@@ -474,6 +475,7 @@ class _GetInstrumentsDialogState extends State<GetInstrumentsDialog> {
                                           await ImageService.compressToBase64(_photoBytes ?? widget.bytes!);
                                       await database.upsertElement(
                                           widget.user.copyWith(session: 1, pictureData: base64pic, result: result));
+                                      widget.updater();
 
                                       close();
 

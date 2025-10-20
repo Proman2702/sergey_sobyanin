@@ -27,9 +27,10 @@ class HandOverInstrumentsDialog extends StatefulWidget {
       required this.bytes,
       required this.allowRedacting,
       required this.bytesFromServer,
+      required this.updater,
       required this.result});
   final Uint8List? bytes;
-
+  final dynamic updater;
   final bool allowRedacting;
   final Map<String, dynamic> result;
   final Uint8List? bytesFromServer;
@@ -234,8 +235,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                             child: widget.bytes != null
                                 ? Center(
                                     child: ConstrainedBox(
-                                      constraints:
-                                          BoxConstraints(maxWidth: 820, maxHeight: 600, minHeight: 600, minWidth: 820),
+                                      constraints: BoxConstraints(maxWidth: 820, maxHeight: 600),
                                       child: Container(
                                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), boxShadow: [
                                           BoxShadow(offset: Offset(0, 4), color: Colors.black38, blurRadius: 3)
@@ -471,6 +471,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
 
                                       final firstPic = base64Decode(widget.user.pictureData);
                                       final secondPic = _photoBytes ?? widget.bytes!;
+                                      widget.updater();
 
                                       close();
 
@@ -484,6 +485,7 @@ class _HandOverInstrumentsDialogState extends State<HandOverInstrumentsDialog> {
                                                 pic2: secondPic,
                                                 result1: widget.user.result,
                                                 result2: result,
+                                                updater: widget.updater,
                                               ));
                                     }
                                   },

@@ -64,6 +64,10 @@ class _MainModuleState extends State<MainModule> {
     super.dispose();
   }
 
+  void updateCallback() {
+    setState(() {});
+  }
+
   Future<void> _initCamera() async {
     final video = html.VideoElement()
       ..autoplay = true
@@ -208,7 +212,7 @@ class _MainModuleState extends State<MainModule> {
 
                               List<CustomUser> elements = snapshot.data ?? [];
 
-                              return elements.isNotEmpty
+                              return elements.where((e) => e.session == 1).isNotEmpty
                                   ? Wrap(
                                       spacing: 8,
                                       runSpacing: 8,
@@ -225,14 +229,6 @@ class _MainModuleState extends State<MainModule> {
                                                   await sendToServer();
 
                                                   close();
-                                                  _isShowingWidget = false;
-
-                                                  // _stream?.getTracks().forEach((track) => track.stop());
-
-                                                  // // Отвязываем видео от потока
-                                                  // if (_video != null) {
-                                                  //   _video!.srcObject = null;
-                                                  // }
 
                                                   showDialog(
                                                       context: context,
@@ -240,6 +236,7 @@ class _MainModuleState extends State<MainModule> {
                                                           user: user,
                                                           bytes: _photoBytes,
                                                           allowRedacting: allowRedacting,
+                                                          updater: updateCallback,
                                                           bytesFromServer: bytesFromServer,
                                                           result: result));
                                                 },
@@ -257,56 +254,22 @@ class _MainModuleState extends State<MainModule> {
                                                 ),
                                               ))
                                           .toList())
-                                  : Text("Активных сессий нет");
+                                  : Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Color(CustomColors.darkAccent),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text("Не найдено!",
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(CustomColors.main))),
+                                    );
                             }),
                       ],
                     )),
                 SizedBox(width: 100),
-                // Container(
-                //   width: 100,
-                //   height: 50,
-                //   alignment: Alignment.centerLeft,
-                //   child: Stack(
-                //     clipBehavior: Clip.none,
-                //     children: [
-                //       IconButton(
-                //         onPressed: () {
-                //           setState(() {
-                //             _isShowingWidget = !_isShowingWidget;
-                //             _isHovering = !_isHovering;
-                //           });
-                //         },
-                //         icon: Icon(Icons.search),
-                //         iconSize: 30,
-                //         color: Color(CustomColors.mainLight),
-                //         onHover: (value) {
-                //           if (!_isShowingWidget) {
-                //             setState(() {
-                //               _isHovering = !_isHovering;
-                //             });
-                //           }
-                //         },
-                //       ),
-                //       _isHovering
-                //           ? Positioned(
-                //               bottom: 45,
-                //               left: 30,
-                //               child: Container(
-                //                 padding: EdgeInsets.all(8),
-                //                 decoration: BoxDecoration(
-                //                     color: Color(CustomColors.backgroundDark).withOpacity(0.7),
-                //                     borderRadius: BorderRadius.circular(10)),
-                //                 child: Text(
-                //                   "Показать активные сессии",
-                //                   style: TextStyle(color: Colors.white),
-                //                 ),
-                //               ),
-                //             )
-                //           : SizedBox()
-                //     ],
-                //   ),
-                // ),
-                // SizedBox(width: 400),
                 CustomButton(
                   onTap: id != ''
                       ? () async {
@@ -320,15 +283,6 @@ class _MainModuleState extends State<MainModule> {
 
                           close();
 
-                          _isShowingWidget = false;
-
-                          // _stream?.getTracks().forEach((track) => track.stop());
-
-                          // // Отвязываем видео от потока
-                          // if (_video != null) {
-                          //   _video!.srcObject = null;
-                          // }
-
                           user.session == 0
                               ? showDialog(
                                   context: context,
@@ -337,6 +291,7 @@ class _MainModuleState extends State<MainModule> {
                                       bytes: _photoBytes,
                                       allowRedacting: allowRedacting,
                                       bytesFromServer: bytesFromServer,
+                                      updater: updateCallback,
                                       result: result))
                               : showDialog(
                                   context: context,
@@ -344,6 +299,7 @@ class _MainModuleState extends State<MainModule> {
                                       user: user,
                                       bytes: _photoBytes,
                                       allowRedacting: allowRedacting,
+                                      updater: updateCallback,
                                       bytesFromServer: bytesFromServer,
                                       result: result));
                         }

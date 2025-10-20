@@ -20,13 +20,15 @@ class ComparePicsDialog extends StatefulWidget {
       required this.pic1,
       required this.pic2,
       required this.result1,
-      required this.result2});
+      required this.result2,
+      required this.updater});
 
   final String id;
   final Uint8List pic1;
   final Uint8List pic2;
   final Map<String, dynamic> result1;
   final Map<String, dynamic> result2;
+  final dynamic updater;
 
   @override
   State<ComparePicsDialog> createState() => _ComparePicsDialogState();
@@ -425,6 +427,7 @@ class _ComparePicsDialogState extends State<ComparePicsDialog> {
                             await database.deleteElement(widget.id);
 
                             final time = DateTime.now().toIso8601String();
+                            widget.updater();
 
                             await historyDatabase.upsertElement(HistoryTile(
                                 id: widget.id,

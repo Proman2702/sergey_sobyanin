@@ -7,7 +7,7 @@ class ImageService {
   // Возвращает Base64
   static Future<String> compressToBase64(
     Uint8List inputBytes, {
-    int maxBytes = 1024 * 1024, // 1 МБ
+    int maxBytes = 1000 * 1000, // 1 МБ
     int boxW = 1920,
     int boxH = 1080,
     int startQuality = 90,
